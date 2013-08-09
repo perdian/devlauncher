@@ -10,15 +10,19 @@
 
     <mkdir dir="${release.target.directory}/archive/" />
     <copy todir="${release.target.directory}/archive/">
-      <fileset dir="${build.target.directory}/*.jar" />
+      <fileset dir="${build.target.directory}">
+        <include name="*.jar" />
+      </fileset>
     </copy>
 
     <mkdir dir="${release.target.directory}/latest/" />
     <delete failonerror="false" includeemptydirs="true">
       <fileset dir="${release.target.directory}/latest/" />
     </delete>
-    <copy todir="${release.target.directory}/archive/">
-      <fileset dir="${build.target.directory}/*.jar" />
+    <copy todir="${release.target.directory}/latest/">
+      <fileset dir="${build.target.directory}">
+        <include name="*.jar" />
+      </fileset>
     </copy>
 
   </target>
