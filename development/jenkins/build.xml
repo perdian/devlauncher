@@ -3,7 +3,7 @@
 -->
 <project>
 
-  <property name="build.target.directory" location="${project.directory}/target/" />
+  <property name="build.target.directory" location="./target/" />
   <property name="release.target.directory" location="${build.target.directory}/release/" />
 
   <target name="distribute-release">
