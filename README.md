@@ -12,7 +12,7 @@ the launching process and is also available outside a maven environment.
 
 ## Download
 
-TBD!
+The DevLauncher can be downloaded from: **[http://dev.perdian.de/devlauncher/releases/latest/](http://dev.perdian.de/devlauncher/releases/latest/)**
 
 ## Usage
 
