@@ -1,14 +1,13 @@
 # DevLauncher
 
-Web application launcher to easy up developing web applications.
-
-The devlauncher is a simple Java framework allowing you to easily configure an
+DevLauncher is a simple Java framework allowing you to easily configure an
 embedded [Jetty](http://www.eclipse.org/jetty/) servlet container to startup
-your web application already configured using a Spring ApplicationContext.
+your web application.
 
 Although Apache Maven provides a basic embedded webserver integration, the
-DevLauncher gives you much more flexibility to configuration and interact with
-the launching process and is also available outside a maven environment.
+DevLauncher gives you much more flexibility during the configuration and allows
+a finer interaction with the launching process. It also doesn't depend on
+Maven as build environment and can be used in standalone applications.
 
 ## Download
 
@@ -21,9 +20,8 @@ to make your life easier, not the other way around).
 
 ### Hello World!
 
-A "Hello World" example, in
-which a simple web application without any special configuration is started
-looks like this:
+A "Hello World" example, in which a simple web application without any special
+configuration is started looks like this:
 
       package de.perdian.apps.devlauncher.example;
 
