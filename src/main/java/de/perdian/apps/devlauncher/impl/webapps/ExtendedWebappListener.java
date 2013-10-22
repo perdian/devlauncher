@@ -57,7 +57,7 @@ public class ExtendedWebappListener extends AbstractWebappListener {
         String projectRootDirectoryValue = System.getProperty("devlauncher.projectRootDirectory", null);
         File projectRootDirectory = projectRootDirectoryValue != null && projectRootDirectoryValue.length() > 0 ? new File(projectRootDirectoryValue).getCanonicalFile() : null;
         if(projectRootDirectory == null) {
-            return this.resolveCurrentProjectDirectory();
+            return this.resolveCurrentProjectDirectory().getParentFile();
         } else {
             return projectRootDirectory;
         }
