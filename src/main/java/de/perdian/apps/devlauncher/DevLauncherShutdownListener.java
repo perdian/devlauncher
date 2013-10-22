@@ -48,7 +48,7 @@ class DevLauncherShutdownListener {
      */
     static void shutdownExistingServer(Integer shutdownPort) {
         if(shutdownPort != null) {
-            DevLauncherShutdownListener.log.debug("Try shutting down running server");
+            DevLauncherShutdownListener.log.debug("Try shutting down running server using port: " + shutdownPort);
             try {
                 Socket shutdownSocket = new Socket();
                 try {
@@ -107,6 +107,7 @@ class DevLauncherShutdownListener {
             // a System.exit call to terminate the virtual machine.
             Thread shutdownThread = new Thread(new Runnable() {
                 @Override public void run() {
+                    log.info("Start listening for shutdown commands on port: " + shutdownPort);
                     try {
                         ServerSocket serverSocket = new ServerSocket(shutdownPort.intValue(), 0, InetAddress.getByName("localhost"));
                         try {

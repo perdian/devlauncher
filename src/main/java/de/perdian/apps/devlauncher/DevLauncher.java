@@ -34,22 +34,9 @@ public class DevLauncher {
     private List<DevLauncherListener> myListeners = new CopyOnWriteArrayList<DevLauncherListener>();
 
     /**
-     * Launches the internal webserver and blocks until the webserver has been
-     * shutdown
-     */
-    public void launchAndWaitForShutdown() throws Exception {
-
-        Tomcat tomcat = this.launch();
-
-        log.info("Waiting until embedded webserver is shutdown");
-        tomcat.getServer().await();
-
-    }
-
-    /**
      * Launches the internal webserver
      */
-    public Tomcat launch() throws Exception {
+    public void launch() throws Exception {
 
         DevLauncherShutdownListener.shutdownExistingServer(this.getShutdownPort());
 
@@ -66,8 +53,9 @@ public class DevLauncher {
         log.info("Starting embedded webserver");
         tomcat.start();
 
+        // Wait for shutdown
         DevLauncherShutdownListener.installForServer(tomcat, this.getShutdownPort());
-        return tomcat;
+        tomcat.getServer().await();
 
 
     }
