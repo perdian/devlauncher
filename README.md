@@ -1,7 +1,7 @@
 # DevLauncher
 
 DevLauncher is a simple Java framework allowing you to easily configure an
-embedded [Jetty](http://www.eclipse.org/jetty/) servlet container to startup
+embedded [Tomcat](http://tomcat.apache.org/) servlet container to startup
 your web application.
 
 Although Apache Maven provides a basic embedded webserver integration, the
@@ -19,7 +19,7 @@ The releases are also available from Maven Central using the following dependenc
       <dependency>
         <groupId>de.perdian.apps.devlauncher</groupId>
         <artifactId>devlauncher</artifactId>
-        <version>1.0.0</version>
+        <version>2.0.0</version>
       </dependency>
 
 ## Usage
@@ -32,16 +32,13 @@ to make your life easier, not the other way around).
 A "Hello World" example, in which a simple web application without any special
 configuration is started looks like this:
 
-      package de.perdian.apps.devlauncher.example;
-
-      import de.perdian.apps.devlauncher.DevLauncher;
-
       public class SimpleExample {
 
-        public static void main(String[] args) {
+        public static void main(String[] args) throws Exception {
 
+          DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
           DevLauncher devLauncher = new DevLauncher();
-          devLauncher.setWebappDirectory("src/example/webapp/simple/");
+          devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
           devLauncher.launch();
 
         }
@@ -51,7 +48,7 @@ configuration is started looks like this:
 This is the simplest example thinkable. The HTTP port under which the embedded
 server will be started is 8080 and the context path will be the root context, so
 after executing the main method of the DevLauncher, the example application will
-be available at: `http://localhost:8080/`.
+be available at: `http://localhost:8080/simple/`.
 
 The DevLauncher doesn't do very much here in terms of configuration etc. So
 let's introduce the first real feature which is already there even if you don't
@@ -72,61 +69,118 @@ take care of checking whether or not there is any active instance.
 If you do not want this feature to be available, you can disable it by simply
 setting the shutdownListenerPort to a value of 0 or less.
 
-### Adding additional configuration options
+## Adding additional configuration options
 
 The DevLauncher class can be configured with a series of additional options to
 aid in your development cycle.
 
-#### initProperties
+### Properties initialization
 
-Additional properties can be added that will be passed to the web application
-and will be available from within the `ServletContext`. For example:
+Additional properties will be read from the system properties - if they are
+set. Additionally, you can define an external properties file. All the
+properties in this file are added to the system properties before any
+configuration is done. This allows you to externalize your properties in one
+location.
 
-      package de.perdian.apps.devlauncher.example;
+If there is a system property already existing when the external configuration
+is loaded, then the existing value will remain unchanged, the new value from the
+properties file will be ignored.
 
-      import java.util.Properties;
+Let's take a look at another example:
 
-      import de.perdian.apps.devlauncher.DevLauncher;
-
-      public class PropertiesPassingExample {
+      public class SystemPropertyTest {
 
         public static void main(String[] args) {
 
-          Properties initParameters = new Properties();
-          initParameters.setProperty("foo", "bar");
+          System.setProperty("devlauncher.configurationFile", "/home/foo/file.properties");
 
+          DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
           DevLauncher devLauncher = new DevLauncher();
-          devLauncher.setWebappDirectory("src/example/webapp/propertiesPassing/");
-          devLauncher.setWebappInitParameters(initParameters);
+          devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
           devLauncher.launch();
 
         }
 
       }
 
-Which will result in the following output from the servlet:
+Here, the properties from the configuration file at `/home/foo/file.properties`
+will be made available in the system properties. If you do not specify a value
+for `devlauncher.configurationFile` the file will be expected in the current
+directory from which the Java application was started. If it can't be found
+there, then no additional properties will be set.
 
-      package de.perdian.apps.devlauncher.example;
+### Properties
 
-      import java.io.IOException;
+Either through setting them directly as system property or through
+initialization via the configuraion file (as shown above) the following
+properties will be evaluated by the launcher:
 
-      import javax.servlet.ServletException;
-      import javax.servlet.http.HttpServlet;
-      import javax.servlet.http.HttpServletRequest;
-      import javax.servlet.http.HttpServletResponse;
+#### devlauncher.defaultPort (int)
 
-      public class PropertiesPassingServlet extends HttpServlet {
+> The port on which the server will listen for incoming requests.
+>
+> Default value: `8080`.
 
-        static final long serialVersionUID = 1L;
+#### devlauncher.shutdownPort (int)
 
-        @Override
-        protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+> The port on which the server will open a shutdown connection, where a new
+> instance of the application will first contact any running old instance on
+> that port to make sure the old instance is shutdown first, before the new
+> instance initializes the embedded webserver.
+>
+> Default value: `8081`
 
-          resp.getWriter().println("Value for foo: " + this.getServletContext().getInitParameter("foo"));
+### devlauncher.workingDirectory (String)
 
-          // The result should be:
-          // Value for foo: bar
+> A directory on the local file system, where the launcher will store it's
+> temporary data (like the workfiles from the webserver)
+>
+> Default value: `[User_Home]/.devlauncher`
 
-        }
+### devlauncher.workingDirectoryName (String)
 
-      }
+> The `.devlauncher` part of the default directory (see above) can be customized
+> separately. It can also be customized by passing at as constructor argument
+> to the constructor of the `DevLauncherBuilder`.
+>
+> Default value: `.devlauncher` (see above)
+
+## Listeners
+
+Implementations of the `DevLauncherListener` interface can be added to the
+`DevLauncher` to enable fine tuning of the embedded webserver in a powerful
+way. A series of provided listeners can be utilized for common tasks. Following
+a list of the listeners provided by the devlauncher out of the box:
+
+### de.perdian.apps.devlauncher.impl.connectors.SimpleConnectorListener
+
+Adds a simple HTTP connector to the embedded webserver. Additionally to the
+port defined within the `DevLauncher` itself, the server will also listen for
+incoming requests on the port defined in the connector.
+
+For example, if you want the server to not only listen on port 8080 but also on
+port 9090, the following code can be used:
+
+      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+      DevLauncher devLauncher = new DevLauncher();
+      devLauncher.addListener(new SimpleConnectorListener(9090));
+      devLauncher.launch();
+
+### de.perdian.apps.devlauncher.impl.connectors.TlsConnectorListener
+
+Adds a TLS connector, which enables requests made using the HTTPS protocol.
+The listener will make sure, that a self signed certificate is available that
+is used during the transfer. The certificate itself will then be stored in the
+working directory, that is passed as constructor argument:
+
+      File workingDirectory = new File("/home/foo/directory");
+      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+      DevLauncher devLauncher = new DevLauncher();
+      devLauncher.addListener(new TlsConnectorListener(workingDirectory, 443));
+      devLauncher.launch();
+
+### de.perdian.apps.devlauncher.impl.webapps.SimpleWebappListener
+
+As seen in the first example, the ´SimpleWebappListener` makes the content of
+a directory available within a web application.
+
