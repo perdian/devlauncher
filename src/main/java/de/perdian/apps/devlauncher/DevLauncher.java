@@ -57,7 +57,6 @@ public class DevLauncher {
         DevLauncherShutdownListener.installForServer(tomcat, this.getShutdownPort());
         tomcat.getServer().await();
 
-
     }
 
     // -------------------------------------------------------------------------

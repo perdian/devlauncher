@@ -164,6 +164,7 @@ port 9090, the following code can be used:
       DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
       DevLauncher devLauncher = new DevLauncher();
       devLauncher.addListener(new SimpleConnectorListener(9090));
+      devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
       devLauncher.launch();
 
 ### de.perdian.apps.devlauncher.impl.connectors.TlsConnectorListener
@@ -177,6 +178,7 @@ working directory, that is passed as constructor argument:
       DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
       DevLauncher devLauncher = new DevLauncher();
       devLauncher.addListener(new TlsConnectorListener(workingDirectory, 443));
+      devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
       devLauncher.launch();
 
 ### de.perdian.apps.devlauncher.impl.webapps.SimpleWebappListener
@@ -184,3 +186,22 @@ working directory, that is passed as constructor argument:
 As seen in the first example, the ´SimpleWebappListener` makes the content of
 a directory available within a web application.
 
+### de.perdian.apps.devlauncher.impl.webapps.ExtendedWebappListener
+
+Adds a webapp to the embedded webserver instance. The only constructor argument
+is the name of the webapp under which it will be made available in the server.
+The webapp itself is automatically lookup up.
+
+Instead of writing a detailed documentation, take a look at the following
+implementation code which will give a very good introduction of how the
+initialization is done:
+
+      String webappName = ... // The name passed to the constructor
+      String projectRootDirectoryValue = System.getProperty("devlauncher.projectRootDirectory", null);
+      File projectRootDirectory = projectDirectoryValue == null ? new File(".").getParentFile() : new File(projectDirectoryValue);
+      String projectDirectoryValue = System.getProperty("devlauncher.project." + webappName, null);
+      File projectDirectory = projectDirectoryValue == null ? new File(projectRootDirectory, webappName) : new File(projectDirectoryValue);
+      File webappDirectory = new File(projectDirectory, "src/main/webapp");
+
+The computed `webappDirectory` will then be used as source for the web
+application that is added to the embedded webserver.
