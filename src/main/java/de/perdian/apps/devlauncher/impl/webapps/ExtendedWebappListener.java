@@ -28,6 +28,10 @@ public class ExtendedWebappListener extends AbstractWebappListener {
         super(webappName);
     }
 
+    public ExtendedWebappListener(String contextName, String directoryName) {
+        super(contextName, directoryName);
+    }
+
     @Override
     protected final File resolveWebappDirectory(DevLauncher launcher) throws IOException {
         File projectDirectory = this.resolveProjectDirectory();
@@ -47,7 +51,7 @@ public class ExtendedWebappListener extends AbstractWebappListener {
     protected File resolveWebappDirectory(File projectDirectory, File workingDirectory) throws IOException {
         File webappDirectory = new File(projectDirectory, "src/main/webapp");
         if(!webappDirectory.exists()) {
-            throw new FileNotFoundException("Cannot find webapp directory for webapp '" + this.getWebappName() + "' at: " + webappDirectory.getAbsolutePath());
+            throw new FileNotFoundException("Cannot find webapp directory for webapp context '" + this.getWebappContextName() + "' at: " + webappDirectory.getAbsolutePath());
         } else {
             return webappDirectory;
         }
@@ -74,14 +78,14 @@ public class ExtendedWebappListener extends AbstractWebappListener {
     }
 
     private File resolveProjectDirectory() throws IOException {
-        String projectDirectoryValue = System.getProperty("devlauncher.project." + this.getWebappName(), null);
+        String projectDirectoryValue = System.getProperty("devlauncher.project." + this.getWebappContextName(), null);
         File projectDirectory = projectDirectoryValue == null ? null : new File(projectDirectoryValue).getCanonicalFile();
         if(projectDirectory == null) {
             File projectRootDirectory = this.resolveProjectRootDirectory();
-            projectDirectory = new File(projectRootDirectory, this.getWebappName());
+            projectDirectory = new File(projectRootDirectory, this.getWebappDirectoryName());
         }
         if(!projectDirectory.exists()) {
-            throw new FileNotFoundException("Cannot find project directory for project '" + this.getWebappName() + "' at: " + projectDirectory.getAbsolutePath());
+            throw new FileNotFoundException("Cannot find project directory for webapp context '" + this.getWebappContextName() + "' at: " + projectDirectory.getAbsolutePath());
         }
         return projectDirectory;
     }

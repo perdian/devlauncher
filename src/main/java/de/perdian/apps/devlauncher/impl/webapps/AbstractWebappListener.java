@@ -36,23 +36,29 @@ import de.perdian.apps.devlauncher.DevLauncherListener;
 public abstract class AbstractWebappListener implements DevLauncherListener {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractWebappListener.class);
-    private String myWebappName = null;
+    private String myWebappContextName = null;
+    private String myWebappDirectoryName = null;
 
     public AbstractWebappListener(String webappName) {
-        this.setWebappName(webappName);
+        this(webappName, webappName);
+    }
+
+    public AbstractWebappListener(String contextName, String directoryName) {
+        this.setWebappContextName(contextName);
+        this.setWebappDirectoryName(directoryName);
     }
 
     @Override
     public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
 
         File webappDirectory = this.resolveWebappDirectory(launcher);
-        log.debug("Resolved webapp directory for webapp '" + this.getWebappName() + "' to: " + webappDirectory.getAbsolutePath());
+        log.debug("Resolved webapp directory for webapp context '" + this.getWebappContextName() + "' to: " + webappDirectory.getAbsolutePath());
 
-        Context webappContext = tomcat.addWebapp("/" + this.getWebappName(), webappDirectory.getCanonicalPath());
+        Context webappContext = tomcat.addWebapp("/" + this.getWebappContextName(), webappDirectory.getCanonicalPath());
 
         File contextConfigurationFile = this.resolveContextConfigurationFile(launcher);
         if(contextConfigurationFile != null && contextConfigurationFile.exists()) {
-            log.debug("Resolved context file for webapp '" + this.getWebappName() + "' to: " + contextConfigurationFile.getAbsolutePath());
+            log.debug("Resolved context file for webapp context '" + this.getWebappContextName() + "' to: " + contextConfigurationFile.getAbsolutePath());
             webappContext.setConfigFile(contextConfigurationFile.toURI().toURL());
         }
 
@@ -68,11 +74,18 @@ public abstract class AbstractWebappListener implements DevLauncherListener {
     // ---  Property access methods  -------------------------------------------
     // -------------------------------------------------------------------------
 
-    protected String getWebappName() {
-        return this.myWebappName;
+    protected String getWebappContextName() {
+        return this.myWebappContextName;
     }
-    private void setWebappName(String webappName) {
-        this.myWebappName = webappName;
+    private void setWebappContextName(String webappContextName) {
+        this.myWebappContextName = webappContextName;
+    }
+
+    protected String getWebappDirectoryName() {
+        return this.myWebappDirectoryName;
+    }
+    private void setWebappDirectoryName(String webappDirectoryName) {
+        this.myWebappDirectoryName = webappDirectoryName;
     }
 
 }
