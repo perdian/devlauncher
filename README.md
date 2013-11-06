@@ -19,7 +19,7 @@ The releases are also available from Maven Central using the following dependenc
       <dependency>
         <groupId>de.perdian.apps.devlauncher</groupId>
         <artifactId>devlauncher</artifactId>
-        <version>2.0.3</version>
+        <version>2.0.4</version>
       </dependency>
 
 ## Usage
@@ -167,6 +167,17 @@ port 9090, the following code can be used:
       devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
       devLauncher.launch();
 
+You can also customize the protocol to be used for the connector. For example to
+add a listener on port 8009 listening for AJP requests (and using a redirect
+port of 8443), the initialization looks like this:
+
+      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+      DevLauncher devLauncher = new DevLauncher();
+      devLauncher.addListener(new SimpleConnectorListener(9090));
+      devLauncher.addListener(new SimpleConnectorListener("AJP/1.3", 8009, 8443));
+      devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
+      devLauncher.launch();
+
 ### de.perdian.apps.devlauncher.impl.connectors.TlsConnectorListener
 
 Adds a TLS connector, which enables requests made using the HTTPS protocol.
@@ -183,7 +194,7 @@ working directory, that is passed as constructor argument:
 
 ### de.perdian.apps.devlauncher.impl.webapps.SimpleWebappListener
 
-As seen in the first example, the ´SimpleWebappListener` makes the content of
+As seen in the first example, the `SimpleWebappListener` makes the content of
 a directory available within a web application.
 
 ### de.perdian.apps.devlauncher.impl.webapps.ExtendedWebappListener
