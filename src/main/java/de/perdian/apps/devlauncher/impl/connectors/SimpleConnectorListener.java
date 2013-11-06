@@ -29,24 +29,51 @@ import de.perdian.apps.devlauncher.DevLauncherListener;
  *
  * @author Christian Robert
  */
+
 public class SimpleConnectorListener implements DevLauncherListener {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleConnectorListener.class);
     private int myPort = -1;
+    private String myProtocol = null;
+    private int myRedirectPort = -1;
 
     public SimpleConnectorListener(int port) {
+        this(null, port, -1);
+    }
+
+    public SimpleConnectorListener(String protocol, int port, int redirectPort) {
+        this.setRedirectPort(redirectPort);
         this.setPort(port);
+        this.setProtocol(protocol);
     }
 
     @Override
     public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
 
-        Connector connector = new Connector();
-        connector.setPort(this.getPort());
+        Connector connector = this.createConnector();
+        StringBuilder logMessage = new StringBuilder();
+        logMessage.append("Adding simple connector");
+        if(this.getProtocol() != null) {
+            logMessage.append(" for protocol '").append(this.getProtocol());
+        }
+        logMessage.append(" listening on port ").append(this.getPort());
+        if(this.getRedirectPort() > 0) {
+            logMessage.append(" and redirectPort ").append(this.getRedirectPort());
+        }
+        logMessage.append(" [").append(connector).append("]");
+        log.debug(logMessage.toString());
 
-        log.debug("Adding new simple context listening on port: " + this.getPort());
         tomcat.getService().addConnector(connector);
 
+    }
+
+    protected Connector createConnector() {
+        Connector connector = new Connector(this.getProtocol());
+        connector.setPort(this.getPort());
+        if(this.getRedirectPort() > 0) {
+            connector.setRedirectPort(this.getRedirectPort());
+        }
+        return connector;
     }
 
     // -------------------------------------------------------------------------
@@ -58,6 +85,20 @@ public class SimpleConnectorListener implements DevLauncherListener {
     }
     private void setPort(int port) {
         this.myPort = port;
+    }
+
+    private String getProtocol() {
+        return this.myProtocol;
+    }
+    private void setProtocol(String protocol) {
+        this.myProtocol = protocol;
+    }
+
+    private int getRedirectPort() {
+        return this.myRedirectPort;
+    }
+    private void setRedirectPort(int redirectPort) {
+        this.myRedirectPort = redirectPort;
     }
 
 }
