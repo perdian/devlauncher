@@ -19,7 +19,7 @@ The releases are also available from Maven Central using the following dependenc
       <dependency>
         <groupId>de.perdian.apps.devlauncher</groupId>
         <artifactId>devlauncher</artifactId>
-        <version>2.0.2</version>
+        <version>2.0.3</version>
       </dependency>
 
 ## Usage
