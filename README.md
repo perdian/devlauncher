@@ -19,7 +19,7 @@ The releases are also available from Maven Central using the following dependenc
       <dependency>
         <groupId>de.perdian.apps.devlauncher</groupId>
         <artifactId>devlauncher</artifactId>
-        <version>2.0.0</version>
+        <version>2.0.4</version>
       </dependency>
 
 ## Usage
@@ -164,6 +164,17 @@ port 9090, the following code can be used:
       DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
       DevLauncher devLauncher = devLauncherBuilder.createLauncher();
       devLauncher.addListener(new SimpleConnectorListener(9090));
+      devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
+      devLauncher.launch();
+
+You can also customize the protocol to be used for the connector. For example to
+add a listener on port 8009 listening for AJP requests (and using a redirect
+port of 8443), the initialization looks like this:
+
+      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+      DevLauncher devLauncher = new DevLauncher();
+      devLauncher.addListener(new SimpleConnectorListener(9090));
+      devLauncher.addListener(new SimpleConnectorListener("AJP/1.3", 8009, 8443));
       devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
       devLauncher.launch();
 

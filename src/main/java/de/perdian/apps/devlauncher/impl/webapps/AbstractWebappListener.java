@@ -19,6 +19,8 @@ package de.perdian.apps.devlauncher.impl.webapps;
 import java.io.File;
 import java.io.IOException;
 
+import javax.servlet.ServletException;
+
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
@@ -54,14 +56,17 @@ public abstract class AbstractWebappListener implements DevLauncherListener {
         File webappDirectory = this.resolveWebappDirectory(launcher);
         log.debug("Resolved webapp directory for webapp context '" + this.getWebappContextName() + "' to: " + webappDirectory.getAbsolutePath());
 
-        Context webappContext = tomcat.addWebapp("/" + this.getWebappContextName(), webappDirectory.getCanonicalPath());
-
+        Context webappContext = this.createWebappContext(tomcat, webappDirectory, launcher);
         File contextConfigurationFile = this.resolveContextConfigurationFile(launcher);
         if(contextConfigurationFile != null && contextConfigurationFile.exists()) {
             log.debug("Resolved context file for webapp context '" + this.getWebappContextName() + "' to: " + contextConfigurationFile.getAbsolutePath());
             webappContext.setConfigFile(contextConfigurationFile.toURI().toURL());
         }
 
+    }
+
+    protected Context createWebappContext(Tomcat tomcat, File webappDirectory, DevLauncher launcher) throws IOException, ServletException {
+        return tomcat.addWebapp("/" + this.getWebappContextName(), webappDirectory.getCanonicalPath());
     }
 
     protected abstract File resolveWebappDirectory(DevLauncher launcher) throws IOException;
