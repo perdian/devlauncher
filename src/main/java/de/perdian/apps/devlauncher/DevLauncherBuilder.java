@@ -85,11 +85,11 @@ public class DevLauncherBuilder {
         String defaultPortValue = System.getProperty("devlauncher.defaultPort", "8080");
         String shutdownPortValue = System.getProperty("devlauncher.shutdownPort", "8081");
 
-        DevLauncher configuration = new DevLauncher();
-        configuration.setDefaultPort(defaultPortValue == null || defaultPortValue.length() <= 0 ? null : Integer.valueOf(defaultPortValue));
-        configuration.setShutdownPort(shutdownPortValue == null  || shutdownPortValue.length() <= 0 ? null : Integer.valueOf(shutdownPortValue));
-        configuration.setWorkingDirectory(this.resolveWorkingDirectory());
-        return configuration;
+        DevLauncher launcher = new DevLauncher();
+        launcher.setDefaultPort(defaultPortValue == null || defaultPortValue.length() <= 0 ? null : Integer.valueOf(defaultPortValue));
+        launcher.setShutdownPort(shutdownPortValue == null  || shutdownPortValue.length() <= 0 ? null : Integer.valueOf(shutdownPortValue));
+        launcher.setWorkingDirectory(this.resolveWorkingDirectory());
+        return launcher;
 
     }
 

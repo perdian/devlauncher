@@ -37,7 +37,7 @@ configuration is started looks like this:
         public static void main(String[] args) throws Exception {
 
           DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-          DevLauncher devLauncher = new DevLauncher();
+          DevLauncher devLauncher = devLauncherBuilder.createLauncher();
           devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
           devLauncher.launch();
 
@@ -95,7 +95,7 @@ Let's take a look at another example:
           System.setProperty("devlauncher.configurationFile", "/home/foo/file.properties");
 
           DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-          DevLauncher devLauncher = new DevLauncher();
+          DevLauncher devLauncher = devLauncherBuilder.createLauncher();
           devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
           devLauncher.launch();
 
@@ -162,7 +162,7 @@ For example, if you want the server to not only listen on port 8080 but also on
 port 9090, the following code can be used:
 
       DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-      DevLauncher devLauncher = new DevLauncher();
+      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
       devLauncher.addListener(new SimpleConnectorListener(9090));
       devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
       devLauncher.launch();
@@ -186,7 +186,7 @@ is used during the transfer. The certificate itself will then be stored in the
 working directory, that is passed as constructor argument:
 
       File workingDirectory = new File("/home/foo/directory");
-      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
       DevLauncher devLauncher = new DevLauncher();
       devLauncher.addListener(new TlsConnectorListener(workingDirectory, 443));
       devLauncher.addListener(new SimpleWebappListener("simple", "src/example/webapp/simple/"));
