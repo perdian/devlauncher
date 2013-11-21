@@ -41,6 +41,10 @@ public class SimpleConnectorListener implements DevLauncherListener {
         this(null, port, -1);
     }
 
+    public SimpleConnectorListener(String protocol, int port) {
+        this(protocol, port, -1);
+    }
+
     public SimpleConnectorListener(String protocol, int port, int redirectPort) {
         this.setRedirectPort(redirectPort);
         this.setPort(port);
