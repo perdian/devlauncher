@@ -40,6 +40,12 @@ public class DevLauncher {
 
         DevLauncherShutdownListener.shutdownExistingServer(this.getShutdownPort());
 
+        // To make sure the JSP context is available, we have to access the
+        // class at least once. This basically is a dirty hack to allow Tiles 3
+        // to work together with a Spring context defined through the
+        // initializer before any servlet instance has been created
+        try { Class.forName("org.apache.jasper.compiler.JspRuntimeContext"); } catch(Exception e) {};
+
         Tomcat tomcat = new Tomcat();
         tomcat.setBaseDir(new File(this.getWorkingDirectory(), "tomcat/").getCanonicalPath());
         tomcat.setPort(this.getDefaultPort());
