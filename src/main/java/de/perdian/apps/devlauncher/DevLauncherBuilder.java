@@ -57,7 +57,7 @@ public class DevLauncherBuilder {
      *   thrown if the configuration cannot be read correctly
      */
     public DevLauncher createLauncher() throws IOException {
-        return this.createLauncher(this.resolveConfigurationFile());
+        return this.createLauncher(DevLauncherHelper.resolveConfigurationFile());
     }
 
     /**
@@ -110,27 +110,6 @@ public class DevLauncherBuilder {
             if(System.getProperty(configurationKey, null) == null) {
                 System.setProperty(configurationKey, (String)configurationEntry.getValue());
             }
-        }
-    }
-
-    private File resolveProjectDirectory() throws IOException {
-        String projectDirectoryValue = System.getProperty("devlauncher.projectDirectory", null);
-        File projectDirectory = projectDirectoryValue == null ? null : new File(projectDirectoryValue);
-        if(projectDirectory == null) {
-            return new File(".").getCanonicalFile();
-        } else {
-            return projectDirectory.getCanonicalFile();
-        }
-    }
-
-    private File resolveConfigurationFile() throws IOException {
-        File projectDirectory = this.resolveProjectDirectory();
-        String configurationFileValue = System.getProperty("devlauncher.configurationFile", "devlauncher.properties");
-        File configurationFile = new File(configurationFileValue);
-        if(configurationFile.isAbsolute()) {
-            return configurationFile;
-        } else {
-            return new File(projectDirectory, configurationFileValue);
         }
     }
 

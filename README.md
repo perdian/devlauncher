@@ -216,3 +216,60 @@ initialization is done:
 
 The computed `webappDirectory` will then be used as source for the web
 application that is added to the embedded webserver.
+
+### de.perdian.apps.devlauncher.impl.util.CopyResourcesListener
+
+Sometimes a web application depends on external resources to be copied during
+a deploy process. Since the DevLauncher doesn't really perform a deploy process
+(in which a WAR file get's created) but launches the webserver directly, we need
+to simulate such a deployment step.
+
+And one of these steps is copy resources. If this listener is added to a
+DevLauncher, then whenever the server is started, the listener will make sure,
+that resources from a source directory are copied to a target directory.
+
+The listener can be customized by setting the following system properties either
+directory via `System.setProperty` or via the configuration file as described
+earlier.
+
+#### devlauncher.copy.sourceDirectory (String)
+
+> The source directory from which the files will be read.
+>
+> Default value: src/main/resources within the current project directory
+
+#### devlauncher.copy.targetDirectory (String)
+
+> The target directory into which the files will be copied
+>
+> The is no default value for this property - it is required and must be set
+> when using the listener.
+
+Note that when using the configuration property, the prefix `devlauncher.copy.`
+can be customized by setting it on the listener itself:
+
+      CopyResourcesListener listener = new CopyResourcesListener();
+      listener.setPrefix("devlauncher.anotherCopyPrefix.");
+      ...
+      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+      ...
+      devLauncher.addListener(listener);
+
+The listener can also be customized via other properties that define how the
+copy process is handled:
+
+#### fileFilter (java.io.FileFilter)
+
+Check whether a file has to be copied. If this value is set to `null` then by
+default all files will be copied.
+
+#### copyRecursive (boolean)
+
+Specifies if only the initial directory files will be copied (when set to
+`false`) or if subdirectories should be copied as well (when set to `true`)
+
+#### copyUpdatedFilesOnly (boolean)
+
+Specifies if the copy should only be performed if either the size of the files
+is different or the source file is newer than the target file. If set to `false`
+then the file will always be copied no matter if it actually needs to or not.

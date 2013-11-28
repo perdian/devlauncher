@@ -46,6 +46,7 @@ public class DevLauncher {
         // initializer before any servlet instance has been created
         try { Class.forName("org.apache.jasper.compiler.JspRuntimeContext"); } catch(Exception e) {};
 
+        // No create and configure the embedded tomcat webserver
         Tomcat tomcat = new Tomcat();
         tomcat.setBaseDir(new File(this.getWorkingDirectory(), "tomcat/").getCanonicalPath());
         tomcat.setPort(this.getDefaultPort());

@@ -147,7 +147,7 @@ public class TlsConnectorListener implements DevLauncherListener {
         try {
             Key key = keyStore.getKey(TLS_KEY_NAME, TLS_KEY_PASSWORD.toCharArray());
             if(key != null) {
-                log.debug("Found key '" + TLS_KEY_NAME + "' in KeyStore with format: " + key.getFormat());
+                log.trace("Found key '" + TLS_KEY_NAME + "' in KeyStore with format: " + key.getFormat());
             }
             return key;
         } catch(GeneralSecurityException e) {
