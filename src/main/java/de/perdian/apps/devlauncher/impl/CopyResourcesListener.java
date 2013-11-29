@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.perdian.apps.devlauncher.impl.util;
+package de.perdian.apps.devlauncher.impl;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

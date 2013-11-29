@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.perdian.apps.devlauncher.impl.connectors;
+package de.perdian.apps.devlauncher.impl;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -46,59 +46,97 @@ import de.perdian.apps.devlauncher.DevLauncher;
 import de.perdian.apps.devlauncher.DevLauncherListener;
 
 /**
- * Create the TLS connector, which is the connector that will listen to
- * requests made via HTTPS. A self signed certificate will automatically be
- * created (if it hasn't been created already) to make sure that the browser
- * can successfully establish an SSL connection directly to the Tomcat
- * webserver without the need for an additional Apache HTTPD server in
- * front.
+ * Builder that collects information about the listener that is to be added to
+ * an embedded Tomcat server instance
  *
  * @author Christian Robert
  */
 
 @SuppressWarnings("deprecation")
-public class TlsConnectorListener implements DevLauncherListener {
+public class ConnectorListener implements DevLauncherListener {
 
-    private static final Logger log = LoggerFactory.getLogger(TlsConnectorListener.class);
-
+    private static final Logger log = LoggerFactory.getLogger(ConnectorListener.class);
     private static final String KEYSTORE_PASSWORD = "tlsKeystorePassword";
     private static final String TLS_KEY_NAME = "tlsKeyName";
     private static final String TLS_KEY_PASSWORD = "tlsKeyPassword";
 
-    private File myWorkingDirectory = null;
-    private int myPort = -1;
+    public static final String PROTOCOL_AJP = "AJP/1.3";
 
-    public TlsConnectorListener(File workingDirectory, int port) {
-        this.setWorkingDirectory(workingDirectory);
-        this.setPort(port);
+    private int myPort = -1;
+    private int myRedirectPort = -1;
+    private String myProtocol = null;
+    private String myUriEncoding = "UTF-8";
+    private boolean stateSecure = false;
+
+    /**
+     * Creates a new listener instance
+     *
+     * @param port
+     *     the port on which the listener will listen for incoming requests
+     */
+    public ConnectorListener(int port) {
+        if(port < 0) {
+            throw new IllegalArgumentException("Parameter 'port' must not be negative! [Was: " + port + "]");
+        } else {
+            this.setPort(port);
+        }
     }
 
     @Override
     public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
 
-        // First we need to make sure, that we have a valid KeyStore in our
-        // configuration, that is used to keep track of the TLS certificate
-        File keystoreFile = new File(this.getWorkingDirectory(), "config/keystore");
-        KeyStore keyStore = this.ensureKeyStore(keystoreFile);
-        this.ensureKeyInStore(keystoreFile, keyStore);
+        Connector connector = this.createConnector(launcher);
+        StringBuilder logMessage = new StringBuilder();
+        logMessage.append("Adding").append(this.isSecure() ? " secure" : "").append(" connector");
+        if(this.getProtocol() != null) {
+            logMessage.append(" for protocol '").append(this.getProtocol());
+        }
+        logMessage.append(" listening on port ").append(this.getPort());
+        if(this.getRedirectPort() > 0) {
+            logMessage.append(" and redirectPort ").append(this.getRedirectPort());
+        }
+        logMessage.append(" [").append(connector).append("]");
+        log.debug(logMessage.toString());
 
-        Connector tlsConnector = new Connector();
-        tlsConnector.setPort(this.getPort());
-        tlsConnector.setSecure(true);
-        tlsConnector.setScheme("https");
-        tlsConnector.setAttribute("keyAlias", TLS_KEY_NAME);
-        tlsConnector.setAttribute("keyPass", TLS_KEY_PASSWORD);
-        tlsConnector.setAttribute("keystoreFile", keystoreFile.getCanonicalPath());
-        tlsConnector.setAttribute("keystorePass", KEYSTORE_PASSWORD);
-        tlsConnector.setAttribute("clientAuth", "false");
-        tlsConnector.setAttribute("sslProtocol", "TLS");
-        tlsConnector.setAttribute("SSLEnabled", true);
+        // Special handling for TLS connectors
+        if(this.isSecure()) {
 
-        log.debug("Adding new TLS context listening on port: " + this.getPort());
-        tomcat.getConnector().setRedirectPort(this.getPort());
-        tomcat.getService().addConnector(tlsConnector);
+            File keystoreFile = new File(launcher.getWorkingDirectory(), "config/keystore");
+            KeyStore keyStore = this.ensureKeyStore(keystoreFile);
+            this.ensureKeyInStore(keystoreFile, keyStore);
+
+            connector.setSecure(true);
+            connector.setScheme("https");
+            connector.setAttribute("keyAlias", TLS_KEY_NAME);
+            connector.setAttribute("keyPass", TLS_KEY_PASSWORD);
+            connector.setAttribute("keystoreFile", keystoreFile.getCanonicalPath());
+            connector.setAttribute("keystorePass", KEYSTORE_PASSWORD);
+            connector.setAttribute("clientAuth", "false");
+            connector.setAttribute("sslProtocol", "TLS");
+            connector.setAttribute("SSLEnabled", true);
+            tomcat.getConnector().setRedirectPort(connector.getPort());
+
+        }
+        tomcat.getService().addConnector(connector);
 
     }
+
+    protected Connector createConnector(DevLauncher launcher) {
+        Connector connector = new Connector(this.getProtocol());
+        connector.setPort(this.getPort());
+        if(this.getRedirectPort() > 0) {
+            connector.setRedirectPort(this.getRedirectPort());
+        }
+        if(this.getUriEncoding() != null) {
+            connector.setURIEncoding(this.getUriEncoding());
+        }
+        connector.setXpoweredBy(false);
+        return connector;
+    }
+
+    // -------------------------------------------------------------------------
+    // --- TLS keystore handling -----------------------------------------------
+    // -------------------------------------------------------------------------
 
     private Key ensureKeyInStore(File keystoreFile, KeyStore keyStore) throws GeneralSecurityException, IOException {
         Key key = this.lookupKeyFromStore(keyStore);
@@ -175,21 +213,58 @@ public class TlsConnectorListener implements DevLauncherListener {
     }
 
     // -------------------------------------------------------------------------
-    // ---  Property access methods  -------------------------------------------
+    // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
 
-    private File getWorkingDirectory() {
-        return this.myWorkingDirectory;
-    }
-    private void setWorkingDirectory(File workingDirectory) {
-        this.myWorkingDirectory = workingDirectory;
-    }
-
-    private int getPort() {
+    public int getPort() {
         return this.myPort;
     }
     private void setPort(int port) {
         this.myPort = port;
+    }
+
+    public ConnectorListener redirectPort(int port) {
+        this.setRedirectPort(port);
+        return this;
+    }
+    public int getRedirectPort() {
+        return this.myRedirectPort;
+    }
+    private void setRedirectPort(int redirectPort) {
+        this.myRedirectPort = redirectPort;
+    }
+
+    public ConnectorListener protocol(String protocol) {
+        this.setProtocol(protocol);
+        return this;
+    }
+    public String getProtocol() {
+        return this.myProtocol;
+    }
+    private void setProtocol(String protocol) {
+        this.myProtocol = protocol;
+    }
+
+    public ConnectorListener secure(boolean secure) {
+        this.setSecure(secure);
+        return this;
+    }
+    public boolean isSecure() {
+        return this.stateSecure;
+    }
+    private void setSecure(boolean secure) {
+        this.stateSecure = secure;
+    }
+
+    public ConnectorListener uriEncoding(String encoding) {
+        this.setUriEncoding(encoding);
+        return this;
+    }
+    public String getUriEncoding() {
+        return this.myUriEncoding;
+    }
+    private void setUriEncoding(String uRIEncoding) {
+        this.myUriEncoding = uRIEncoding;
     }
 
 }
