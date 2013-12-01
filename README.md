@@ -11,15 +11,16 @@ Maven as build environment and can be used in standalone applications.
 
 ## Download
 
-The latest version of the DevLauncher can be downloaded from:
+The latest development releases of the DevLauncher can be downloaded from:
 **[http://dev.perdian.de/devlauncher/releases/latest/](http://dev.perdian.de/devlauncher/releases/latest/)**
 
-The releases are also available from Maven Central using the following dependency:
+The official releases are also available from Maven Central using the following
+dependency:
 
       <dependency>
-        <groupId>de.perdian.apps.devlauncher</groupId>
-        <artifactId>devlauncher</artifactId>
-        <version>3.0.0</version>
+          <groupId>de.perdian.apps.devlauncher</groupId>
+          <artifactId>devlauncher</artifactId>
+          <version>3.0.1</version>
       </dependency>
 
 ## Usage
@@ -34,14 +35,14 @@ configuration is started looks like this:
 
       public class SimpleExample {
 
-        public static void main(String[] args) throws Exception {
+          public static void main(String[] args) throws Exception {
 
-          DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-          DevLauncher devLauncher = devLauncherBuilder.createLauncher();
-          devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
-          devLauncher.launch();
+              DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+              DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+              devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
+              devLauncher.launch();
 
-        }
+          }
 
       }
 
@@ -90,16 +91,16 @@ Let's take a look at another example:
 
       public class SystemPropertyTest {
 
-        public static void main(String[] args) {
+          public static void main(String[] args) {
 
-          System.setProperty("devlauncher.configurationFile", "/home/foo/file.properties");
+              System.setProperty("devlauncher.configurationFile", "/home/foo/file.properties");
 
-          DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-          DevLauncher devLauncher = devLauncherBuilder.createLauncher();
-          devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
-          devLauncher.launch();
+              DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
+              DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+              devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
+              devLauncher.launch();
 
-        }
+          }
 
       }
 
@@ -177,7 +178,7 @@ port of 8443), the initialization looks like this:
       DevLauncher devLauncher = devLauncherBuilder.createLauncher();
       devLauncher.addListener(new ConnectorListener(9090));
       devLauncher.addListener(new ConnectorListener(8009).protocol("AJP/1.3").redirectPort(8443));
-      devLauncher.addListener(WebappListener.create("simple").webappDirectory(new File("src/example/webapp/simple/")));
+      devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
       devLauncher.launch();
 
 When setting the `secure` property of the `ConnectorListener` to true, the
@@ -273,7 +274,7 @@ Note that when using the configuration property, the prefix `devlauncher.copy.`
 can be customized by setting it on the listener itself:
 
       CopyResourcesListener listener = new CopyResourcesListener();
-      listener.setPrefix("devlauncher.anotherCopyPrefix.");
+      listener.prefix("devlauncher.anotherCopyPrefix.");
       ...
       DevLauncher devLauncher = devLauncherBuilder.createLauncher();
       ...
@@ -298,14 +299,18 @@ Specifies if the copy should only be performed if either the size of the files
 is different or the source file is newer than the target file. If set to `false`
 then the file will always be copied no matter if it actually needs to or not.
 
-# Version history
+## Version history
 
-## Version 3.0.0
+### Version 3.0.1
 
-[*] Eliminated the need for different connector and webapp listeners.
-    Consolidated the existing logics into new listeners with fluent API for
-    easier configuration and consistent resolving logics.
+[UPDATE] Made `CopyResourcesListener` fit into fluent API concept
 
-## Version 2.1.0
+### Version 3.0.0
 
-[+] Added CopyResourcesListener
+[UPDATE] Eliminated the need for different connector and webapp listeners.
+         Consolidated the existing logics into new listeners with fluent API for
+         easier configuration and consistent resolving logics.
+
+### Version 2.1.0
+
+[NEW]    Added CopyResourcesListener

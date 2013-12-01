@@ -54,38 +54,6 @@ public class CopyResourcesListener implements DevLauncherListener {
     private boolean stateCopyRecursive = true;
     private boolean stateCopyUpdatedFilesOnly = true;
 
-    public CopyResourcesListener() {
-    }
-
-    public CopyResourcesListener(FileFilter fileFilter) {
-        this.setFileFilter(fileFilter);
-    }
-
-    public CopyResourcesListener(String prefix) {
-        this.setPrefix(prefix);
-    }
-
-    public CopyResourcesListener(String prefix, boolean copyRecursive) {
-        this.setPrefix(prefix);
-        this.setCopyRecursive(copyRecursive);
-    }
-
-    public CopyResourcesListener(String prefix, FileFilter fileFilter) {
-        this.setPrefix(prefix);
-        this.setFileFilter(fileFilter);
-    }
-
-    public CopyResourcesListener(String prefix, FileFilter fileFilter, boolean copyRecursive) {
-        this.setPrefix(prefix);
-        this.setFileFilter(fileFilter);
-        this.setCopyRecursive(copyRecursive);
-    }
-
-    public CopyResourcesListener(FileFilter fileFilter, boolean copyRecursive) {
-        this.setFileFilter(fileFilter);
-        this.setCopyRecursive(copyRecursive);
-    }
-
     @Override
     public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
 
@@ -227,31 +195,47 @@ public class CopyResourcesListener implements DevLauncherListener {
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
 
+    public CopyResourcesListener fileFilter(FileFilter fileFilter) {
+        this.setFileFilter(fileFilter);
+        return this;
+    }
     public FileFilter getFileFilter() {
         return this.myFileFilter;
     }
-    public void setFileFilter(FileFilter fileFilter) {
+    private void setFileFilter(FileFilter fileFilter) {
         this.myFileFilter = fileFilter;
     }
 
+    public CopyResourcesListener prefix(String prefix) {
+        this.setPrefix(prefix);
+        return this;
+    }
     public String getPrefix() {
         return this.myPrefix;
     }
-    public void setPrefix(String prefix) {
+    private void setPrefix(String prefix) {
         this.myPrefix = prefix;
     }
 
+    public CopyResourcesListener copyRecursive(boolean recursive) {
+        this.setCopyRecursive(recursive);
+        return this;
+    }
     public boolean isCopyRecursive() {
         return this.stateCopyRecursive;
     }
-    public void setCopyRecursive(boolean copyRecursive) {
+    private void setCopyRecursive(boolean copyRecursive) {
         this.stateCopyRecursive = copyRecursive;
     }
 
+    public CopyResourcesListener copyUpdatedFilesOnly(boolean updatedFilesOnly) {
+        this.setCopyUpdatedFilesOnly(updatedFilesOnly);
+        return this;
+    }
     public boolean isCopyUpdatedFilesOnly() {
         return this.stateCopyUpdatedFilesOnly;
     }
-    public void setCopyUpdatedFilesOnly(boolean copyUpdatedFilesOnly) {
+    private void setCopyUpdatedFilesOnly(boolean copyUpdatedFilesOnly) {
         this.stateCopyUpdatedFilesOnly = copyUpdatedFilesOnly;
     }
 
