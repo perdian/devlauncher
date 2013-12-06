@@ -20,7 +20,7 @@ dependency:
       <dependency>
           <groupId>de.perdian.apps.devlauncher</groupId>
           <artifactId>devlauncher</artifactId>
-          <version>3.0.1</version>
+          <version>3.1.0</version>
       </dependency>
 
 ## Usage
@@ -253,9 +253,14 @@ And one of these steps is copy resources. If this listener is added to a
 DevLauncher, then whenever the server is started, the listener will make sure,
 that resources from a source directory are copied to a target directory.
 
-The listener can be customized by setting the following system properties either
-directory via `System.setProperty` or via the configuration file as described
-earlier.
+The source and target directory (from which to copy the files and where to copy
+them to) for the listener can be customized by either setting the property
+`sourceDirectory` and `targetDirectory` of the listener directly, or by setting
+the following system properties either via `System.setProperty` or via the
+configuration file as described earlier.
+
+      CopyResourcesListener listener = new CopyResourcesListener();
+      listener.sourceDirectory(new File("/foo/")).targetDirectory(new File("/bar/"));
 
 #### devlauncher.copy.sourceDirectory (String)
 
@@ -299,7 +304,16 @@ Specifies if the copy should only be performed if either the size of the files
 is different or the source file is newer than the target file. If set to `false`
 then the file will always be copied no matter if it actually needs to or not.
 
+#### Special copy operations
+
+If you need to perform any special operations during the copy process, you can
+overwrite the `copyFile` method to implement your special handling requests.
+
 ## Version history
+
+### Version 3.1.0
+
+[UPDATE] Made `CopyResourcesListener` more customizable
 
 ### Version 3.0.1
 
