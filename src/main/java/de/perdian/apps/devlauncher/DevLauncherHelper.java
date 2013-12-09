@@ -58,31 +58,39 @@ public class DevLauncherHelper {
         }
     }
 
-    public static void loadConfigurationFile(File configurationFile) throws IOException {
-        File useConfigurationFile = configurationFile == null ? DevLauncherHelper.resolveConfigurationFile() : configurationFile;
-        if(useConfigurationFile != null) {
-            if(!useConfigurationFile.exists()) {
-                log.info("No devlauncher configuration file found at: " + useConfigurationFile.getAbsolutePath() + ". Using default settings.");
-            } else {
-                log.info("Loading devlauncher configuration from: " + useConfigurationFile.getAbsolutePath());
-                Properties configurationProperties = new Properties();
-                try {
-                    InputStream configurationStream = new BufferedInputStream(new FileInputStream(useConfigurationFile));
+    public static void loadConfigurationFile() {
+        DevLauncherHelper.loadConfigurationFile(null);
+    }
+
+    public static void loadConfigurationFile(File configurationFile) {
+        try {
+            File useConfigurationFile = configurationFile == null ? DevLauncherHelper.resolveConfigurationFile() : configurationFile;
+            if(useConfigurationFile != null) {
+                if(!useConfigurationFile.exists()) {
+                    log.info("No devlauncher configuration file found at: " + useConfigurationFile.getAbsolutePath() + ". Using default settings.");
+                } else {
+                    log.info("Loading devlauncher configuration from: " + useConfigurationFile.getAbsolutePath());
+                    Properties configurationProperties = new Properties();
                     try {
-                        configurationProperties.load(configurationStream);
-                    } finally {
-                        configurationStream.close();
+                        InputStream configurationStream = new BufferedInputStream(new FileInputStream(useConfigurationFile));
+                        try {
+                            configurationProperties.load(configurationStream);
+                        } finally {
+                            configurationStream.close();
+                        }
+                    } catch(Exception e) {
+                        log.warn("Cannot load devlauncher configuration properties from: " + useConfigurationFile.getAbsolutePath(), e);
                     }
-                } catch(Exception e) {
-                    log.warn("Cannot load devlauncher configuration properties from: " + useConfigurationFile.getAbsolutePath(), e);
-                }
-                for(Map.Entry<Object, Object> configurationEntry : configurationProperties.entrySet()) {
-                    String configurationKey = (String)configurationEntry.getKey();
-                    if(System.getProperty(configurationKey, null) == null) {
-                        System.setProperty(configurationKey, (String)configurationEntry.getValue());
+                    for(Map.Entry<Object, Object> configurationEntry : configurationProperties.entrySet()) {
+                        String configurationKey = (String)configurationEntry.getKey();
+                        if(System.getProperty(configurationKey, null) == null) {
+                            System.setProperty(configurationKey, (String)configurationEntry.getValue());
+                        }
                     }
                 }
             }
+        } catch(IOException e) {
+            throw new RuntimeException("Cannot load configuration file", e);
         }
     }
 

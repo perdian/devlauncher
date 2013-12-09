@@ -20,7 +20,7 @@ dependency:
       <dependency>
           <groupId>de.perdian.apps.devlauncher</groupId>
           <artifactId>devlauncher</artifactId>
-          <version>3.1.0</version>
+          <version>3.2.0</version>
       </dependency>
 
 ## Usage
@@ -37,8 +37,7 @@ configuration is started looks like this:
 
           public static void main(String[] args) throws Exception {
 
-              DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-              DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+              DevLauncher devLauncher = DevLauncher.createLauncher();
               devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
               devLauncher.launch();
 
@@ -78,10 +77,10 @@ aid in your development cycle.
 ### Properties initialization
 
 Additional properties will be read from the system properties - if they are
-set. Additionally, you can define an external properties file. All the
-properties in this file are added to the system properties before any
-configuration is done. This allows you to externalize your properties in one
-location.
+set. Additionally, you can define an external properties file that is loaded
+through the helper class `DevLauncherHelper`. All the properties in this file
+are added to the system properties. This allows you to externalize your
+properties in one location.
 
 If there is a system property already existing when the external configuration
 is loaded, then the existing value will remain unchanged, the new value from the
@@ -93,10 +92,9 @@ Let's take a look at another example:
 
           public static void main(String[] args) {
 
-              System.setProperty("devlauncher.configurationFile", "/home/foo/file.properties");
+              DevLauncherHelper.loadConfigurationFile(new File("/home/foo/file.properties"));
 
-              DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-              DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+              DevLauncher devLauncher = DevLauncher.createLauncher();
               devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
               devLauncher.launch();
 
@@ -105,10 +103,11 @@ Let's take a look at another example:
       }
 
 Here, the properties from the configuration file at `/home/foo/file.properties`
-will be made available in the system properties. If you do not specify a value
-for `devlauncher.configurationFile` the file will be expected in the current
-directory from which the Java application was started. If it can't be found
-there, then no additional properties will be set.
+will be made available in the system properties. If you do specify a null value
+for the configuration file parameter the file will be expected in the current
+directory from which the Java application was started, named
+`devlauncher.properties`. If it can't be found there, then no additional
+properties will be set.
 
 ### Properties
 
@@ -141,8 +140,8 @@ properties will be evaluated by the launcher:
 ### devlauncher.workingDirectoryName (String)
 
 > The `.devlauncher` part of the default directory (see above) can be customized
-> separately. It can also be customized by passing at as constructor argument
-> to the constructor of the `DevLauncherBuilder`.
+> separately. It can also be customized by passing at as parameter when calling
+> the `createLauncher` method of the `DevLauncher`.
 >
 > Default value: `.devlauncher` (see above)
 
@@ -164,8 +163,7 @@ connector.
 For example, if you want the server to not only listen on port 8080 but also on
 port 9090, the following code can be used:
 
-      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+      DevLauncher devLauncher = DevLauncher.createLauncher();
       devLauncher.addListener(new ConnectorListener(9090));
       devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
       devLauncher.launch();
@@ -174,8 +172,7 @@ You can also customize the protocol to be used for the connector. For example to
 add a listener on port 8009 listening for AJP requests (and using a redirect
 port of 8443), the initialization looks like this:
 
-      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+      DevLauncher devLauncher = DevLauncher.createLauncher();
       devLauncher.addListener(new ConnectorListener(9090));
       devLauncher.addListener(new ConnectorListener(8009).protocol("AJP/1.3").redirectPort(8443));
       devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
@@ -189,8 +186,7 @@ working directory of the launcher for further use, so if it has been created
 once (and most likely has been added to the exception list of your browser) it
 will be reused the next time you use the DevLauncher.
 
-      DevLauncherBuilder devLauncherBuilder = new DevLauncherBuilder();
-      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+      DevLauncher devLauncher = DevLauncher.createLauncher();
       devLauncher.addListener(new ConnectorListener(443).secure(true));
       devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
       devLauncher.launch();
@@ -281,7 +277,7 @@ can be customized by setting it on the listener itself:
       CopyResourcesListener listener = new CopyResourcesListener();
       listener.prefix("devlauncher.anotherCopyPrefix.");
       ...
-      DevLauncher devLauncher = devLauncherBuilder.createLauncher();
+      DevLauncher devLauncher = DevLauncher.createLauncher();
       ...
       devLauncher.addListener(listener);
 
@@ -310,6 +306,11 @@ If you need to perform any special operations during the copy process, you can
 overwrite the `copyFile` method to implement your special handling requests.
 
 ## Version history
+
+### Version 3.2.0
+
+[UPDATE] Replaced `DevLauncherBuilder` with static factory methods in
+         `DevLauncher`
 
 ### Version 3.1.0
 

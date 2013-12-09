@@ -17,6 +17,7 @@
 package de.perdian.apps.devlauncher;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -32,6 +33,76 @@ public class DevLauncher {
     private Integer myShutdownPort = null;
     private File myWorkingDirectory = null;
     private List<DevLauncherListener> myListeners = new CopyOnWriteArrayList<DevLauncherListener>();
+
+    /**
+     * Private constructor to force usage of the {@code createLauncher} factory
+     * methods
+     */
+    private DevLauncher() {
+    }
+
+    /**
+     * Creates a new configuration from the given configuration file
+     *
+     * @param workingDirectoryName
+     *     the name of the working directory in which to store the temporary
+     *     information
+     * @return
+     *   the created configuration
+     * @throws IOException
+     *   thrown if the configuration cannot be read correctly
+     */
+    public static DevLauncher createLauncher() throws IOException {
+        return DevLauncher.createLauncher(".devlauncher");
+    }
+
+    /**
+     * Creates a new configuration from the given configuration file
+     *
+     * @param workingDirectoryName
+     *     the name of the working directory in which to store the temporary
+     *     information
+     * @return
+     *   the created configuration
+     * @throws IOException
+     *   thrown if the configuration cannot be read correctly
+     */
+    public static DevLauncher createLauncher(String workingDirectoryName) throws IOException {
+        String workingDirectoryValue = System.getProperty("devlauncher.workingDirectory", null);
+        File workingDirectory = workingDirectoryValue != null && workingDirectoryValue.length() > 0 ? new File(workingDirectoryValue).getCanonicalFile() : null;
+        if(workingDirectory == null) {
+            File userHomeDirectory = new File(System.getProperty("user.home")).getCanonicalFile();
+            workingDirectory = new File(userHomeDirectory, workingDirectoryName != null ? workingDirectoryName : System.getProperty("devlauncher.workingDirectoryName", ".devlauncher"));
+        }
+        if(!workingDirectory.exists()) {
+            log.debug("Creating devlauncher working directory at: " + workingDirectory.getAbsolutePath());
+            workingDirectory.mkdirs();
+        }
+        return DevLauncher.createLauncher(workingDirectory);
+    }
+
+    /**
+     * Creates a new configuration from the given configuration file
+     *
+     * @param workingDirectory
+     *     the working directory in which to store the temporary information
+     * @return
+     *   the created configuration
+     * @throws IOException
+     *   thrown if the configuration cannot be read correctly
+     */
+    public static DevLauncher createLauncher(File workingDirectory) throws IOException {
+
+        String defaultPortValue = System.getProperty("devlauncher.defaultPort", "8080");
+        String shutdownPortValue = System.getProperty("devlauncher.shutdownPort", "8081");
+
+        DevLauncher launcher = new DevLauncher();
+        launcher.setDefaultPort(defaultPortValue == null || defaultPortValue.length() <= 0 ? null : Integer.valueOf(defaultPortValue));
+        launcher.setShutdownPort(shutdownPortValue == null  || shutdownPortValue.length() <= 0 ? null : Integer.valueOf(shutdownPortValue));
+        launcher.setWorkingDirectory(workingDirectory);
+        return launcher;
+
+    }
 
     /**
      * Launches the internal webserver
