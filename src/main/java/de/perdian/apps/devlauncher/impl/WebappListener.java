@@ -110,7 +110,7 @@ public class WebappListener implements DevLauncherListener {
         }
     }
 
-    private File resolveProjectDirectory(DevLauncher launcher) throws IOException {
+    protected File resolveProjectDirectory(DevLauncher launcher) throws IOException {
         if(this.getProjectDirectory() != null) {
             if(!this.getProjectDirectory().exists()) {
                 throw new FileNotFoundException("Specified project directory not existing at: " + this.getProjectDirectory().getAbsolutePath());
@@ -129,7 +129,7 @@ public class WebappListener implements DevLauncherListener {
         }
     }
 
-    private File resolveWorkspaceDirectory(DevLauncher launcher) throws IOException {
+    protected File resolveWorkspaceDirectory(DevLauncher launcher) throws IOException {
         if(this.getWorkspaceDirectory() != null) {
             if(!this.getWorkspaceDirectory().exists()) {
                 throw new FileNotFoundException("Specified workspace directory not existing at: " + this.getWorkspaceDirectory().getAbsolutePath());

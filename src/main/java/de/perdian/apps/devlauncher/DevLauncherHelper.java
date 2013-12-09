@@ -16,8 +16,16 @@
  */
 package de.perdian.apps.devlauncher;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Global helper methods
@@ -26,6 +34,8 @@ import java.io.IOException;
  */
 
 public class DevLauncherHelper {
+
+    private static final Logger log = LoggerFactory.getLogger(DevLauncherHelper.class);
 
     public static File resolveProjectDirectory() throws IOException {
         String projectDirectoryValue = System.getProperty("devlauncher.projectDirectory", null);
@@ -45,6 +55,34 @@ public class DevLauncherHelper {
             return configurationFile;
         } else {
             return new File(projectDirectory, configurationFileValue);
+        }
+    }
+
+    public static void loadConfigurationFile(File configurationFile) throws IOException {
+        File useConfigurationFile = configurationFile == null ? DevLauncherHelper.resolveConfigurationFile() : configurationFile;
+        if(useConfigurationFile != null) {
+            if(!useConfigurationFile.exists()) {
+                log.info("No devlauncher configuration file found at: " + useConfigurationFile.getAbsolutePath() + ". Using default settings.");
+            } else {
+                log.info("Loading devlauncher configuration from: " + useConfigurationFile.getAbsolutePath());
+                Properties configurationProperties = new Properties();
+                try {
+                    InputStream configurationStream = new BufferedInputStream(new FileInputStream(useConfigurationFile));
+                    try {
+                        configurationProperties.load(configurationStream);
+                    } finally {
+                        configurationStream.close();
+                    }
+                } catch(Exception e) {
+                    log.warn("Cannot load devlauncher configuration properties from: " + useConfigurationFile.getAbsolutePath(), e);
+                }
+                for(Map.Entry<Object, Object> configurationEntry : configurationProperties.entrySet()) {
+                    String configurationKey = (String)configurationEntry.getKey();
+                    if(System.getProperty(configurationKey, null) == null) {
+                        System.setProperty(configurationKey, (String)configurationEntry.getValue());
+                    }
+                }
+            }
         }
     }
 

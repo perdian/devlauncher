@@ -16,13 +16,8 @@
  */
 package de.perdian.apps.devlauncher;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
-import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +52,7 @@ public class DevLauncherBuilder {
      *   thrown if the configuration cannot be read correctly
      */
     public DevLauncher createLauncher() throws IOException {
-        return this.createLauncher(DevLauncherHelper.resolveConfigurationFile());
+        return this.createLauncher(null);
     }
 
     /**
@@ -73,14 +68,7 @@ public class DevLauncherBuilder {
      */
     public DevLauncher createLauncher(File configurationFile) throws IOException {
 
-        if(configurationFile != null) {
-            if(!configurationFile.exists()) {
-                this.log.info("No devlauncher configuration file found at: " + configurationFile.getAbsolutePath() + ". Using default settings.");
-            } else {
-                this.log.info("Loading devlauncher configuration from: " + configurationFile.getAbsolutePath());
-                this.loadConfigurationFile(configurationFile);
-            }
-        }
+        DevLauncherHelper.loadConfigurationFile(configurationFile);
 
         String defaultPortValue = System.getProperty("devlauncher.defaultPort", "8080");
         String shutdownPortValue = System.getProperty("devlauncher.shutdownPort", "8081");
@@ -91,26 +79,6 @@ public class DevLauncherBuilder {
         launcher.setWorkingDirectory(this.resolveWorkingDirectory());
         return launcher;
 
-    }
-
-    private void loadConfigurationFile(File configurationFile) {
-        Properties configurationProperties = new Properties();
-        try {
-            InputStream configurationStream = new BufferedInputStream(new FileInputStream(configurationFile));
-            try {
-                configurationProperties.load(configurationStream);
-            } finally {
-                configurationStream.close();
-            }
-        } catch(Exception e) {
-            this.log.warn("Cannot load devlauncher configuration properties from: " + configurationFile.getAbsolutePath(), e);
-        }
-        for(Map.Entry<Object, Object> configurationEntry : configurationProperties.entrySet()) {
-            String configurationKey = (String)configurationEntry.getKey();
-            if(System.getProperty(configurationKey, null) == null) {
-                System.setProperty(configurationKey, (String)configurationEntry.getValue());
-            }
-        }
     }
 
     private File resolveWorkingDirectory() throws IOException {
