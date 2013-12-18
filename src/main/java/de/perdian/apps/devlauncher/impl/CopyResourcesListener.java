@@ -16,16 +16,15 @@
  */
 package de.perdian.apps.devlauncher.impl;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Timer;
 
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
+import org.apache.catalina.LifecycleListener;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import de.perdian.apps.devlauncher.DevLauncher;
 import de.perdian.apps.devlauncher.DevLauncherHelper;
 import de.perdian.apps.devlauncher.DevLauncherListener;
+import de.perdian.apps.devlauncher.support.CopyResourcesOperation;
 
 /**
  * Sometimes a web application depends on external resources to be copied during
@@ -47,7 +47,7 @@ import de.perdian.apps.devlauncher.DevLauncherListener;
 
 public class CopyResourcesListener implements DevLauncherListener {
 
-    private static final Logger log = LoggerFactory.getLogger(CopyResourcesListener.class);
+    static final Logger log = LoggerFactory.getLogger(CopyResourcesListener.class);
 
     private FileFilter myFileFilter = null;
     private String myPrefix = "devlauncher.copy.";
@@ -55,6 +55,7 @@ public class CopyResourcesListener implements DevLauncherListener {
     private boolean stateCopyUpdatedFilesOnly = true;
     private File mySourceDirectory = null;
     private File myTargetDirectory = null;
+    private long myPollingInterval = -1;
 
     @Override
     public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
@@ -62,106 +63,30 @@ public class CopyResourcesListener implements DevLauncherListener {
         File sourceDirectory = this.resolveSourceDirectory(launcher);
         File targetDirectory = this.resolveTargetDirectory(launcher);
 
-        int copiedFileCount = this.copyFiles(sourceDirectory, targetDirectory, this.isCopyRecursive());
-        if(log.isInfoEnabled()) {
-            StringBuilder logMessage = new StringBuilder();
-            logMessage.append("Copied ").append(copiedFileCount).append(" files from source directory '");
-            logMessage.append(sourceDirectory.getAbsolutePath()).append("' into target directory '");
-            logMessage.append(targetDirectory.getAbsolutePath()).append("'");
-            log.info(logMessage.toString());
-        }
+        CopyResourcesOperation copyResourcesOperation = new CopyResourcesOperation();
+        copyResourcesOperation.setCopyRecursive(this.isCopyRecursive());
+        copyResourcesOperation.setCopyUpdatedFilesOnly(this.isCopyUpdatedFilesOnly());
+        copyResourcesOperation.setFileFilter(this.getFileFilter());
+        copyResourcesOperation.setSourceDirectories(Arrays.asList(sourceDirectory));
+        copyResourcesOperation.setTargetDirectory(targetDirectory);
 
-    }
+        log.info("Copying resources from '{}' to '{}'", sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
+        int copiedFileCount = copyResourcesOperation.copyFiles();
+        log.info("Copied {} resources from source directory '{}' into target directory '{}'", copiedFileCount, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
 
-    private int copyFiles(File sourceDirectory, File targetDirectory, final boolean recursive) throws IOException {
-        int copiedFileCount = 0;
-        File[] sourceFiles = sourceDirectory.listFiles(new FileFilter() {
-            @Override public boolean accept(File file) {
-                if(file.isDirectory()) {
-                    return recursive;
-                } else {
-                    return CopyResourcesListener.this.getFileFilter() == null ? true : CopyResourcesListener.this.getFileFilter().accept(file);
-                }
-            }
-        });
-        if(sourceFiles != null && sourceFiles.length > 0) {
-            if(log.isDebugEnabled()) {
-                StringBuilder logMessage = new StringBuilder();
-                logMessage.append("Checking ").append(sourceFiles.length).append(" resource files from '");
-                logMessage.append(sourceDirectory.getAbsolutePath()).append("' to copy into '");
-                logMessage.append(targetDirectory.getAbsolutePath()).append("'");
-                log.debug(logMessage.toString());
-            }
-            for(File sourceFile : sourceFiles) {
-                if(sourceFile.isDirectory()) {
-                    File targetSubDirectory = new File(targetDirectory, sourceFile.getName());
-                    copiedFileCount += this.copyFiles(sourceFile, targetSubDirectory, true);
-                } else {
-                    File targetFile = new File(targetDirectory, sourceFile.getName());
-                    if(this.checkFileNeedsUpdate(sourceFile, targetFile)) {
-                        if(!targetFile.getParentFile().exists()) {
-                            targetFile.getParentFile().mkdirs();
-                        }
-                        if(this.copyFile(sourceFile, targetFile)) {
-                            copiedFileCount++;
-                        }
+        // If we have an interval set, we also schedule a regular operation that
+        // performs the copy process
+        if(this.getPollingInterval() > 0) {
+            final Timer pollingTimer = copyResourcesOperation.createTimer(this.getPollingInterval());
+            tomcat.getServer().addLifecycleListener(new LifecycleListener() {
+                @Override public void lifecycleEvent(LifecycleEvent event) {
+                    if(Lifecycle.STOP_EVENT.equals(event.getType())) {
+                        pollingTimer.cancel();
                     }
                 }
-            }
-        } else {
-            log.debug("No files found to copy in directory: " + sourceDirectory.getAbsolutePath());
+            });
         }
-        return copiedFileCount;
-    }
 
-    /**
-     * Copy the file from it's source to the requested target location
-     *
-     * @param sourceFile
-     *     the source file to copy
-     * @param targetFile
-     *     the target into which the data should be written
-     * @return
-     *     {@code true} if the file was written, {@code false} if the
-     *     implementation decided not to copy the file
-     */
-    protected boolean copyFile(File sourceFile, File targetFile) throws IOException {
-        try {
-            InputStream sourceStream = new BufferedInputStream(new FileInputStream(sourceFile));
-            try {
-                OutputStream targetStream = new BufferedOutputStream(new FileOutputStream(targetFile));
-                try {
-                    for(int data = sourceStream.read(); data > -1; data = sourceStream.read()) {
-                        targetStream.write(data);
-                    }
-                } finally {
-                    targetStream.close();
-                }
-            } finally {
-                sourceStream.close();
-            }
-            return true;
-        } catch(Exception e) {
-            StringBuilder logMessage = new StringBuilder();
-            logMessage.append("Cannot copy resource file from '").append(sourceFile.getAbsolutePath());
-            logMessage.append("' into target file '").append(targetFile.getAbsolutePath());
-            logMessage.append("'");
-            throw new IOException(logMessage.toString(), e);
-        }
-    }
-
-    /**
-     * Checks if the file needs to be updated
-     */
-    protected boolean checkFileNeedsUpdate(File sourceFile, File targetFile) {
-        if(this.isCopyUpdatedFilesOnly()) {
-            if(sourceFile.length() == targetFile.length()) {
-                if(targetFile.lastModified() <= sourceFile.lastModified()) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     /**
@@ -169,11 +94,11 @@ public class CopyResourcesListener implements DevLauncherListener {
      */
     protected File resolveSourceDirectory(DevLauncher launcher) throws IOException {
         File sourceDirectory = this.getSourceDirectory();
-        if(sourceDirectory == null) {
+        if (sourceDirectory == null) {
             String sourceDirectoryValue = System.getProperty(this.getPrefix() + ".sourceDirectory", null);
             sourceDirectory = sourceDirectoryValue == null || sourceDirectoryValue.length() <= 0 ? this.resolveDefaultSourceDirectory(launcher) : new File(sourceDirectoryValue).getCanonicalFile();
         }
-        if(!sourceDirectory.exists()) {
+        if (!sourceDirectory.exists()) {
             log.warn("Cannot find specified resource copy source directory at: " + sourceDirectory.getAbsolutePath());
         } else {
             log.debug("Resolved resource copy source directory to: " + sourceDirectory.getAbsolutePath());
@@ -191,20 +116,20 @@ public class CopyResourcesListener implements DevLauncherListener {
     }
 
     /**
-     * Resolves the target directory from which the files will be copied
+     * Resolves the target directory into which the files will be copied
      */
     protected File resolveTargetDirectory(DevLauncher launcher) throws IOException {
         File targetDirectory = this.getTargetDirectory();
-        if(targetDirectory == null) {
+        if (targetDirectory == null) {
             String targetDirectoryKey = this.getPrefix() + "targetDirectory";
             String targetDirectoryValue = System.getProperty(targetDirectoryKey, null);
-            if(targetDirectoryValue == null || targetDirectoryValue.length() <= 0) {
+            if (targetDirectoryValue == null || targetDirectoryValue.length() <= 0) {
                 throw new IllegalArgumentException("No configuration value has been set that determines the resource copy target directory (missing entry for key: '" + targetDirectoryKey + "' or property on listener)");
             } else {
                 targetDirectory = new File(targetDirectoryValue).getCanonicalFile();
             }
         }
-        if(!targetDirectory.exists()) {
+        if (!targetDirectory.exists()) {
             log.debug("Creating resource copy target directory at: " + targetDirectory.getAbsolutePath());
             targetDirectory.mkdirs();
         }
@@ -279,6 +204,17 @@ public class CopyResourcesListener implements DevLauncherListener {
     }
     private void setTargetDirectory(File targetDirectory) {
         this.myTargetDirectory = targetDirectory;
+    }
+
+    public CopyResourcesListener pollingInteral(long interval) {
+        this.setPollingInterval(interval);
+        return this;
+    }
+    public long getPollingInterval() {
+        return this.myPollingInterval;
+    }
+    private void setPollingInterval(long pollingInterval) {
+        this.myPollingInterval = pollingInterval;
     }
 
 }
