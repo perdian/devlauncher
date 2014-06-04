@@ -11,16 +11,13 @@ Maven as build environment and can be used in standalone applications.
 
 ## Download
 
-The latest development releases of the DevLauncher can be downloaded from:
-**[http://dev.perdian.de/devlauncher/releases/latest/](http://dev.perdian.de/devlauncher/releases/latest/)**
-
-The official releases are also available from Maven Central using the following
+The official releases are available from Maven Central using the following
 dependency:
 
       <dependency>
           <groupId>de.perdian.apps.devlauncher</groupId>
           <artifactId>devlauncher</artifactId>
-          <version>3.2.0</version>
+          <version>3.2.1</version>
       </dependency>
 
 ## Usage
