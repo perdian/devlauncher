@@ -304,6 +304,11 @@ overwrite the `copyFile` method to implement your special handling requests.
 
 ## Version history
 
+### Version 4.0.0
+
+[UPDATE] Increased required Java version to 1.8
+[UPDATE] Adjusted dependency versions
+
 ### Version 3.2.0
 
 [UPDATE] Replaced `DevLauncherBuilder` with static factory methods in

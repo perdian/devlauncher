@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -75,7 +75,7 @@ public class ConnectorListener implements DevLauncherListener {
      *     the port on which the listener will listen for incoming requests
      */
     public ConnectorListener(int port) {
-        if(port < 0) {
+        if (port < 0) {
             throw new IllegalArgumentException("Parameter 'port' must not be negative! [Was: " + port + "]");
         } else {
             this.setPort(port);
@@ -83,39 +83,43 @@ public class ConnectorListener implements DevLauncherListener {
     }
 
     @Override
-    public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
+    public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
 
         Connector connector = this.createConnector(launcher);
         StringBuilder logMessage = new StringBuilder();
         logMessage.append("Adding").append(this.isSecure() ? " secure" : "").append(" connector");
-        if(this.getProtocol() != null) {
+        if (this.getProtocol() != null) {
             logMessage.append(" for protocol '").append(this.getProtocol());
         }
         logMessage.append(" listening on port ").append(this.getPort());
-        if(this.getRedirectPort() > 0) {
+        if (this.getRedirectPort() > 0) {
             logMessage.append(" and redirectPort ").append(this.getRedirectPort());
         }
         logMessage.append(" [").append(connector).append("]");
         log.debug(logMessage.toString());
 
         // Special handling for TLS connectors
-        if(this.isSecure()) {
+        if (this.isSecure()) {
+            try {
 
-            File keystoreFile = new File(launcher.getWorkingDirectory(), "config/keystore");
-            KeyStore keyStore = this.ensureKeyStore(keystoreFile);
-            this.ensureKeyInStore(keystoreFile, keyStore);
+                File keystoreFile = new File(launcher.getWorkingDirectory(), "config/keystore");
+                KeyStore keyStore = this.ensureKeyStore(keystoreFile);
+                this.ensureKeyInStore(keystoreFile, keyStore);
 
-            connector.setSecure(true);
-            connector.setScheme("https");
-            connector.setAttribute("keyAlias", TLS_KEY_NAME);
-            connector.setAttribute("keyPass", TLS_KEY_PASSWORD);
-            connector.setAttribute("keystoreFile", keystoreFile.getCanonicalPath());
-            connector.setAttribute("keystorePass", KEYSTORE_PASSWORD);
-            connector.setAttribute("clientAuth", "false");
-            connector.setAttribute("sslProtocol", "TLS");
-            connector.setAttribute("SSLEnabled", true);
-            tomcat.getConnector().setRedirectPort(connector.getPort());
+                connector.setSecure(true);
+                connector.setScheme("https");
+                connector.setAttribute("keyAlias", TLS_KEY_NAME);
+                connector.setAttribute("keyPass", TLS_KEY_PASSWORD);
+                connector.setAttribute("keystoreFile", keystoreFile.getCanonicalPath());
+                connector.setAttribute("keystorePass", KEYSTORE_PASSWORD);
+                connector.setAttribute("clientAuth", "false");
+                connector.setAttribute("sslProtocol", "TLS");
+                connector.setAttribute("SSLEnabled", true);
+                tomcat.getConnector().setRedirectPort(connector.getPort());
 
+            } catch (Exception e) {
+                throw new RuntimeException("Cannot prepare SSL keystore configuration", e);
+            }
         }
         tomcat.getService().addConnector(connector);
 
@@ -124,10 +128,10 @@ public class ConnectorListener implements DevLauncherListener {
     protected Connector createConnector(DevLauncher launcher) {
         Connector connector = new Connector(this.getProtocol());
         connector.setPort(this.getPort());
-        if(this.getRedirectPort() > 0) {
+        if (this.getRedirectPort() > 0) {
             connector.setRedirectPort(this.getRedirectPort());
         }
-        if(this.getUriEncoding() != null) {
+        if (this.getUriEncoding() != null) {
             connector.setURIEncoding(this.getUriEncoding());
         }
         connector.setXpoweredBy(false);
@@ -140,7 +144,7 @@ public class ConnectorListener implements DevLauncherListener {
 
     private Key ensureKeyInStore(File keystoreFile, KeyStore keyStore) throws GeneralSecurityException, IOException {
         Key key = this.lookupKeyFromStore(keyStore);
-        if(key == null) {
+        if (key == null) {
 
             log.info("Creating new TLS key to enable HTTPS access");
 
@@ -155,7 +159,7 @@ public class ConnectorListener implements DevLauncherListener {
             v3CertGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
             v3CertGen.setIssuerDN(new X509Principal("CN=" + "localhost" + ", OU=None, O=None L=None, C=None"));
             v3CertGen.setNotBefore(new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30));
-            v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 365*10)));
+            v3CertGen.setNotAfter(new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 365 * 10)));
             v3CertGen.setSubjectDN(new X509Principal("CN=" + "localhost" + ", OU=None, O=None L=None, C=None"));
             v3CertGen.setPublicKey(keyPair.getPublic());
             v3CertGen.setSignatureAlgorithm("MD5WithRSAEncryption");
@@ -166,15 +170,12 @@ public class ConnectorListener implements DevLauncherListener {
 
             // Write the keystore into the target file
             log.debug("Updating KeyStore at: " + keystoreFile.getAbsolutePath());
-            if(!keystoreFile.getParentFile().exists()) {
+            if (!keystoreFile.getParentFile().exists()) {
                 keystoreFile.getParentFile().mkdirs();
             }
-            OutputStream keyStoreStream = new BufferedOutputStream(new FileOutputStream(keystoreFile));
-            try {
+            try (OutputStream keyStoreStream = new BufferedOutputStream(new FileOutputStream(keystoreFile))) {
                 keyStore.store(keyStoreStream, KEYSTORE_PASSWORD.toCharArray());
                 keyStoreStream.flush();
-            } finally {
-                keyStoreStream.close();
             }
 
         }
@@ -184,11 +185,11 @@ public class ConnectorListener implements DevLauncherListener {
     private Key lookupKeyFromStore(KeyStore keyStore) {
         try {
             Key key = keyStore.getKey(TLS_KEY_NAME, TLS_KEY_PASSWORD.toCharArray());
-            if(key != null) {
+            if (key != null) {
                 log.trace("Found key '" + TLS_KEY_NAME + "' in KeyStore with format: " + key.getFormat());
             }
             return key;
-        } catch(GeneralSecurityException e) {
+        } catch (GeneralSecurityException e) {
             log.debug("Cannot retrieve key from KeyStore", e);
             return null;
         }
@@ -197,15 +198,12 @@ public class ConnectorListener implements DevLauncherListener {
     private KeyStore ensureKeyStore(File keystoreFile) throws GeneralSecurityException, IOException {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);
-        if(keystoreFile.exists()) {
+        if (keystoreFile.exists()) {
             try {
-                InputStream keystoreFileStream = new BufferedInputStream(new FileInputStream(keystoreFile));
-                try {
+                try (InputStream keystoreFileStream = new BufferedInputStream(new FileInputStream(keystoreFile))) {
                     keyStore.load(keystoreFileStream, KEYSTORE_PASSWORD.toCharArray());
-                } finally {
-                    keystoreFileStream.close();
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 log.warn("Cannot load KeyStore from file at: " + keystoreFile.getAbsolutePath());
             }
         }

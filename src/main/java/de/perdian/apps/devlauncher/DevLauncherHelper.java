@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,7 +40,7 @@ public class DevLauncherHelper {
     public static File resolveProjectDirectory() throws IOException {
         String projectDirectoryValue = System.getProperty("devlauncher.projectDirectory", null);
         File projectDirectory = projectDirectoryValue == null ? null : new File(projectDirectoryValue);
-        if(projectDirectory == null) {
+        if (projectDirectory == null) {
             return new File(".").getCanonicalFile();
         } else {
             return projectDirectory.getCanonicalFile();
@@ -51,7 +51,7 @@ public class DevLauncherHelper {
         File projectDirectory = DevLauncherHelper.resolveProjectDirectory();
         String configurationFileValue = System.getProperty("devlauncher.configurationFile", "devlauncher.properties");
         File configurationFile = new File(configurationFileValue);
-        if(configurationFile.isAbsolute()) {
+        if (configurationFile.isAbsolute()) {
             return configurationFile;
         } else {
             return new File(projectDirectory, configurationFileValue);
@@ -65,32 +65,47 @@ public class DevLauncherHelper {
     public static void loadConfigurationFile(File configurationFile) {
         try {
             File useConfigurationFile = configurationFile == null ? DevLauncherHelper.resolveConfigurationFile() : configurationFile;
-            if(useConfigurationFile != null) {
-                if(!useConfigurationFile.exists()) {
+            if (useConfigurationFile != null) {
+                if (!useConfigurationFile.exists()) {
                     log.info("No devlauncher configuration file found at: " + useConfigurationFile.getAbsolutePath() + ". Using default settings.");
                 } else {
                     log.info("Loading devlauncher configuration from: " + useConfigurationFile.getAbsolutePath());
                     Properties configurationProperties = new Properties();
                     try {
-                        InputStream configurationStream = new BufferedInputStream(new FileInputStream(useConfigurationFile));
-                        try {
+                        try (InputStream configurationStream = new BufferedInputStream(new FileInputStream(useConfigurationFile))) {
                             configurationProperties.load(configurationStream);
-                        } finally {
-                            configurationStream.close();
                         }
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         log.warn("Cannot load devlauncher configuration properties from: " + useConfigurationFile.getAbsolutePath(), e);
                     }
-                    for(Map.Entry<Object, Object> configurationEntry : configurationProperties.entrySet()) {
+                    for (Map.Entry<Object, Object> configurationEntry : configurationProperties.entrySet()) {
                         String configurationKey = (String)configurationEntry.getKey();
-                        if(System.getProperty(configurationKey, null) == null) {
+                        if (System.getProperty(configurationKey, null) == null) {
                             System.setProperty(configurationKey, (String)configurationEntry.getValue());
                         }
                     }
                 }
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Cannot load configuration file", e);
+        }
+    }
+
+    static File resolveWorkingDirectory(String workingDirectoryName) {
+        try {
+            String workingDirectoryValue = System.getProperty("devlauncher.workingDirectory", null);
+            File workingDirectory = workingDirectoryValue != null && workingDirectoryValue.length() > 0 ? new File(workingDirectoryValue).getCanonicalFile() : null;
+            if (workingDirectory == null) {
+                File userHomeDirectory = new File(System.getProperty("user.home")).getCanonicalFile();
+                workingDirectory = new File(userHomeDirectory, workingDirectoryName != null ? workingDirectoryName : System.getProperty("devlauncher.workingDirectoryName", ".devlauncher"));
+            }
+            if (!workingDirectory.exists()) {
+                log.debug("Creating devlauncher working directory at: " + workingDirectory.getAbsolutePath());
+                workingDirectory.mkdirs();
+            }
+            return workingDirectory;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Cannot resolve working directory", e);
         }
     }
 

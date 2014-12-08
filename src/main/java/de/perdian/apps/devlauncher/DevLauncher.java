@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
 package de.perdian.apps.devlauncher;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -29,93 +28,51 @@ public class DevLauncher {
 
     private static final Logger log = LoggerFactory.getLogger(DevLauncher.class);
 
-    private Integer myDefaultPort = 0;
-    private Integer myShutdownPort = null;
-    private File myWorkingDirectory = null;
-    private List<DevLauncherListener> myListeners = new CopyOnWriteArrayList<DevLauncherListener>();
+    private Integer defaultPort = Integer.valueOf(8080);
+    private Integer shutdownPort = Integer.valueOf(8081);
+    private File workingDirectory = null;
+    private List<DevLauncherListener> listeners = new CopyOnWriteArrayList<>();
 
     /**
-     * Private constructor to force usage of the {@code createLauncher} factory
-     * methods
+     * Creates a new {@code DevLauncher} instance using the default working
+     * directory (<code>.devlauncher</code> within the current user directory
+     * as working directory
      */
-    private DevLauncher() {
+    public DevLauncher() {
+        this(DevLauncherHelper.resolveWorkingDirectory(".devlauncher"));
     }
 
     /**
-     * Creates a new configuration from the given configuration file
+     * Creates a new {@code DevLauncher} instance
      *
      * @param workingDirectoryName
      *     the name of the working directory in which to store the temporary
      *     information
-     * @return
-     *   the created configuration
-     * @throws IOException
-     *   thrown if the configuration cannot be read correctly
      */
-    public static DevLauncher createLauncher() throws IOException {
-        return DevLauncher.createLauncher(".devlauncher");
+    public DevLauncher(String workingDirectoryName) {
+        this(DevLauncherHelper.resolveWorkingDirectory(workingDirectoryName));
     }
 
     /**
-     * Creates a new configuration from the given configuration file
-     *
-     * @param workingDirectoryName
-     *     the name of the working directory in which to store the temporary
-     *     information
-     * @return
-     *   the created configuration
-     * @throws IOException
-     *   thrown if the configuration cannot be read correctly
-     */
-    public static DevLauncher createLauncher(String workingDirectoryName) throws IOException {
-        String workingDirectoryValue = System.getProperty("devlauncher.workingDirectory", null);
-        File workingDirectory = workingDirectoryValue != null && workingDirectoryValue.length() > 0 ? new File(workingDirectoryValue).getCanonicalFile() : null;
-        if(workingDirectory == null) {
-            File userHomeDirectory = new File(System.getProperty("user.home")).getCanonicalFile();
-            workingDirectory = new File(userHomeDirectory, workingDirectoryName != null ? workingDirectoryName : System.getProperty("devlauncher.workingDirectoryName", ".devlauncher"));
-        }
-        if(!workingDirectory.exists()) {
-            log.debug("Creating devlauncher working directory at: " + workingDirectory.getAbsolutePath());
-            workingDirectory.mkdirs();
-        }
-        return DevLauncher.createLauncher(workingDirectory);
-    }
-
-    /**
-     * Creates a new configuration from the given configuration file
+     * Creates a new {@code DevLauncher} instance
      *
      * @param workingDirectory
      *     the working directory in which to store the temporary information
-     * @return
-     *   the created configuration
-     * @throws IOException
-     *   thrown if the configuration cannot be read correctly
      */
-    public static DevLauncher createLauncher(File workingDirectory) throws IOException {
-
-        String defaultPortValue = System.getProperty("devlauncher.defaultPort", "8080");
-        String shutdownPortValue = System.getProperty("devlauncher.shutdownPort", "8081");
-
-        DevLauncher launcher = new DevLauncher();
-        launcher.setDefaultPort(defaultPortValue == null || defaultPortValue.length() <= 0 ? null : Integer.valueOf(defaultPortValue));
-        launcher.setShutdownPort(shutdownPortValue == null  || shutdownPortValue.length() <= 0 ? null : Integer.valueOf(shutdownPortValue));
-        launcher.setWorkingDirectory(workingDirectory);
-        return launcher;
-
+    public DevLauncher(File workingDirectory) {
+        this.setWorkingDirectory(workingDirectory);
     }
 
     /**
-     * Launches the internal webserver
+     * Launches the internal webserver and initialize the server according to
+     * the internal list of {@link DevLauncherListener} instances
+     *
+     * @throws Exception
+     *     thrown if any kind of error occures during the server start
      */
     public void launch() throws Exception {
 
         DevLauncherShutdownListener.shutdownExistingServer(this.getShutdownPort());
-
-        // To make sure the JSP context is available, we have to access the
-        // class at least once. This basically is a dirty hack to allow Tiles 3
-        // to work together with a Spring context defined through the
-        // initializer before any servlet instance has been created
-        try { Class.forName("org.apache.jasper.compiler.JspRuntimeContext"); } catch(Exception e) {};
 
         // No create and configure the embedded tomcat webserver
         Tomcat tomcat = new Tomcat();
@@ -123,22 +80,20 @@ public class DevLauncher {
         tomcat.setPort(this.getDefaultPort());
         tomcat.enableNaming();
 
-        // Make sure all listeners get to do their work
-        for(DevLauncherListener listener : this.getListeners()) {
-            listener.customizeServer(tomcat, this);
-        }
+        log.trace("Invoking DevLauncherListener instances");
+        this.getListeners().forEach(listener -> listener.customizeServer(tomcat, this));
 
         log.info("Starting embedded webserver");
         tomcat.start();
 
-        // Wait for shutdown
+        log.trace("Waiting for server shutdown");
         DevLauncherShutdownListener.installForServer(tomcat, this.getShutdownPort());
         tomcat.getServer().await();
 
     }
 
     // -------------------------------------------------------------------------
-    // ---  Property access methods  -------------------------------------------
+    // --- Property access methods -------------------------------------------
     // -------------------------------------------------------------------------
 
     /**
@@ -146,10 +101,10 @@ public class DevLauncher {
      * incoming requests
      */
     public Integer getDefaultPort() {
-        return this.myDefaultPort;
+        return this.defaultPort;
     }
     public void setDefaultPort(Integer defaultPort) {
-        this.myDefaultPort = defaultPort;
+        this.defaultPort = defaultPort;
     }
 
     /**
@@ -157,30 +112,30 @@ public class DevLauncher {
      * store it's temporary data and other relevant files
      */
     public File getWorkingDirectory() {
-        return this.myWorkingDirectory;
+        return this.workingDirectory;
     }
     public void setWorkingDirectory(File workingDirectory) {
-        this.myWorkingDirectory = workingDirectory;
+        this.workingDirectory = workingDirectory;
     }
 
     /**
      * Gets the port on which the launcher will listen for a shutdown event
      */
     public Integer getShutdownPort() {
-        return this.myShutdownPort;
+        return this.shutdownPort;
     }
     public void setShutdownPort(Integer shutdownPort) {
-        this.myShutdownPort = shutdownPort;
+        this.shutdownPort = shutdownPort;
     }
 
     /**
      * Gets all the listeners interacting with this launcher
      */
     List<DevLauncherListener> getListeners() {
-        return this.myListeners;
+        return this.listeners;
     }
     void setListeners(List<DevLauncherListener> listeners) {
-        this.myListeners = listeners;
+        this.listeners = listeners;
     }
     public void addListener(DevLauncherListener listener) {
         this.getListeners().add(listener);

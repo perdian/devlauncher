@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,22 +55,26 @@ public class WebappListener implements DevLauncherListener {
     }
 
     @Override
-    public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
+    public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
+        try {
 
-        File webappDirectory = this.resolveWebappDirectory(launcher);
-        log.debug("Resolved webapp directory for webapp context '" + this.getContextName() + "' to: " + webappDirectory.getAbsolutePath());
+            File webappDirectory = this.resolveWebappDirectory(launcher);
+            log.debug("Resolved webapp directory for webapp context '" + this.getContextName() + "' to: " + webappDirectory.getAbsolutePath());
 
-        Context webappContext = this.createWebappContext(tomcat, webappDirectory, launcher);
-        File contextConfigurationFile = this.resolveContextConfigurationFile(launcher);
-        if(contextConfigurationFile != null) {
-            if(!contextConfigurationFile.exists()) {
-                log.warn("Resolved context configuration file for webapp context '" + this.getContextName() + "' not existing at: " + contextConfigurationFile.getAbsolutePath());
-            } else {
-                log.debug("Resolved context configuration file for webapp context '" + this.getContextName() + "' to: " + contextConfigurationFile.getAbsolutePath());
-                webappContext.setConfigFile(contextConfigurationFile.toURI().toURL());
+            Context webappContext = this.createWebappContext(tomcat, webappDirectory, launcher);
+            File contextConfigurationFile = this.resolveContextConfigurationFile(launcher);
+            if (contextConfigurationFile != null) {
+                if (!contextConfigurationFile.exists()) {
+                    log.warn("Resolved context configuration file for webapp context '" + this.getContextName() + "' not existing at: " + contextConfigurationFile.getAbsolutePath());
+                } else {
+                    log.debug("Resolved context configuration file for webapp context '" + this.getContextName() + "' to: " + contextConfigurationFile.getAbsolutePath());
+                    webappContext.setConfigFile(contextConfigurationFile.toURI().toURL());
+                }
             }
-        }
 
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot initialize web application context", e);
+        }
     }
 
     protected Context createWebappContext(Tomcat tomcat, File webappDirectory, DevLauncher launcher) throws Exception {
@@ -78,12 +82,12 @@ public class WebappListener implements DevLauncherListener {
     }
 
     protected File resolveContextConfigurationFile(DevLauncher launcher) throws IOException {
-        if(this.getContextConfigurationFileResolver() != null) {
+        if (this.getContextConfigurationFileResolver() != null) {
             File projectDirectory = this.resolveProjectDirectory(launcher);
             return this.getContextConfigurationFileResolver().resolveContextConfigurationFile(this.getContextName(), projectDirectory, launcher);
-        } else if(this.getContextConfigurationFile() != null) {
+        } else if (this.getContextConfigurationFile() != null) {
             return this.getContextConfigurationFile();
-        } else if(this.getContextConfigurationFileName() != null) {
+        } else if (this.getContextConfigurationFileName() != null) {
             File projectDirectory = this.resolveProjectDirectory(launcher);
             return new File(projectDirectory, this.getContextConfigurationFileName()).getCanonicalFile();
         } else {
@@ -92,8 +96,8 @@ public class WebappListener implements DevLauncherListener {
     }
 
     protected File resolveWebappDirectory(DevLauncher launcher) throws IOException {
-        if(this.getWebappDirectory() != null) {
-            if(!this.getWebappDirectory().exists()) {
+        if (this.getWebappDirectory() != null) {
+            if (!this.getWebappDirectory().exists()) {
                 throw new FileNotFoundException("Specified webapp directory not existing at: " + this.getWebappDirectory().getAbsolutePath());
             } else {
                 return this.getWebappDirectory();
@@ -102,7 +106,7 @@ public class WebappListener implements DevLauncherListener {
             File projectDirectory = this.resolveProjectDirectory(launcher);
             String webappDirectoryName = this.getWebappDirectoryName();
             File webappDirectory = new File(projectDirectory, webappDirectoryName == null ? "src/main/webapp/" : webappDirectoryName);
-            if(!webappDirectory.exists()) {
+            if (!webappDirectory.exists()) {
                 throw new FileNotFoundException("Computed webapp directory not existing at: " + webappDirectory.getAbsolutePath());
             } else {
                 return webappDirectory;
@@ -111,8 +115,8 @@ public class WebappListener implements DevLauncherListener {
     }
 
     protected File resolveProjectDirectory(DevLauncher launcher) throws IOException {
-        if(this.getProjectDirectory() != null) {
-            if(!this.getProjectDirectory().exists()) {
+        if (this.getProjectDirectory() != null) {
+            if (!this.getProjectDirectory().exists()) {
                 throw new FileNotFoundException("Specified project directory not existing at: " + this.getProjectDirectory().getAbsolutePath());
             } else {
                 return this.getProjectDirectory();
@@ -121,7 +125,7 @@ public class WebappListener implements DevLauncherListener {
             File workspaceDirectory = this.resolveWorkspaceDirectory(launcher);
             String projectDirectoryName = this.getProjectDirectoryName() == null ? this.getContextName() : this.getProjectDirectoryName();
             File projectDirectory = new File(workspaceDirectory, projectDirectoryName).getCanonicalFile();
-            if(!projectDirectory.exists()) {
+            if (!projectDirectory.exists()) {
                 throw new FileNotFoundException("Computed project directory not existing at: " + projectDirectory.getAbsolutePath());
             } else {
                 return projectDirectory;
@@ -130,8 +134,8 @@ public class WebappListener implements DevLauncherListener {
     }
 
     protected File resolveWorkspaceDirectory(DevLauncher launcher) throws IOException {
-        if(this.getWorkspaceDirectory() != null) {
-            if(!this.getWorkspaceDirectory().exists()) {
+        if (this.getWorkspaceDirectory() != null) {
+            if (!this.getWorkspaceDirectory().exists()) {
                 throw new FileNotFoundException("Specified workspace directory not existing at: " + this.getWorkspaceDirectory().getAbsolutePath());
             } else {
                 return this.getWorkspaceDirectory();
@@ -140,7 +144,7 @@ public class WebappListener implements DevLauncherListener {
             String workspaceDirectoryValue = System.getProperty("devlauncher.workspaceDirectory", null);
             File workspaceComputedDirectory = workspaceDirectoryValue != null && workspaceDirectoryValue.length() > 0 ? new File(workspaceDirectoryValue).getCanonicalFile() : null;
             File workspaceDirectory = workspaceComputedDirectory == null ? new File(".").getCanonicalFile().getParentFile() : workspaceComputedDirectory;
-            if(!workspaceDirectory.exists()) {
+            if (!workspaceDirectory.exists()) {
                 throw new FileNotFoundException("Computed workspace directory not existing at: " + workspaceDirectory.getAbsolutePath());
             } else {
                 return workspaceDirectory;

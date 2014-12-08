@@ -6,7 +6,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,35 +58,41 @@ public class CopyResourcesListener implements DevLauncherListener {
     private long myPollingInterval = -1;
 
     @Override
-    public void customizeServer(Tomcat tomcat, DevLauncher launcher) throws Exception {
+    public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
+        try {
 
-        File sourceDirectory = this.resolveSourceDirectory(launcher);
-        File targetDirectory = this.resolveTargetDirectory(launcher);
+            File sourceDirectory = this.resolveSourceDirectory(launcher);
+            File targetDirectory = this.resolveTargetDirectory(launcher);
 
-        CopyResourcesOperation copyResourcesOperation = new CopyResourcesOperation();
-        copyResourcesOperation.setCopyRecursive(this.isCopyRecursive());
-        copyResourcesOperation.setCopyUpdatedFilesOnly(this.isCopyUpdatedFilesOnly());
-        copyResourcesOperation.setFileFilter(this.getFileFilter());
-        copyResourcesOperation.setSourceDirectories(Arrays.asList(sourceDirectory));
-        copyResourcesOperation.setTargetDirectory(targetDirectory);
+            CopyResourcesOperation copyResourcesOperation = new CopyResourcesOperation();
+            copyResourcesOperation.setCopyRecursive(this.isCopyRecursive());
+            copyResourcesOperation.setCopyUpdatedFilesOnly(this.isCopyUpdatedFilesOnly());
+            copyResourcesOperation.setFileFilter(this.getFileFilter());
+            copyResourcesOperation.setSourceDirectories(Arrays.asList(sourceDirectory));
+            copyResourcesOperation.setTargetDirectory(targetDirectory);
 
-        log.info("Copying resources from '{}' to '{}'", sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
-        int copiedFileCount = copyResourcesOperation.copyFiles();
-        log.info("Copied {} resources from source directory '{}' into target directory '{}'", copiedFileCount, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
+            log.info("Copying resources from '{}' to '{}'", sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
+            int copiedFileCount = copyResourcesOperation.copyFiles();
+            log.info("Copied {} resources from source directory '{}' into target directory '{}'", copiedFileCount, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
 
-        // If we have an interval set, we also schedule a regular operation that
-        // performs the copy process
-        if(this.getPollingInterval() > 0) {
-            final Timer pollingTimer = copyResourcesOperation.createTimer(this.getPollingInterval());
-            tomcat.getServer().addLifecycleListener(new LifecycleListener() {
-                @Override public void lifecycleEvent(LifecycleEvent event) {
-                    if(Lifecycle.STOP_EVENT.equals(event.getType())) {
-                        pollingTimer.cancel();
+            // If we have an interval set, we also schedule a regular operation
+            // that
+            // performs the copy process
+            if (this.getPollingInterval() > 0) {
+                final Timer pollingTimer = copyResourcesOperation.createTimer(this.getPollingInterval());
+                tomcat.getServer().addLifecycleListener(new LifecycleListener() {
+                    @Override
+                    public void lifecycleEvent(LifecycleEvent event) {
+                        if (Lifecycle.STOP_EVENT.equals(event.getType())) {
+                            pollingTimer.cancel();
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
 
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot copy resources", e);
+        }
     }
 
     /**
