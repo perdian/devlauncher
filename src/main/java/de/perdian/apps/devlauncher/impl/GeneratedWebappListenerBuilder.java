@@ -16,6 +16,11 @@
  */
 package de.perdian.apps.devlauncher.impl;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Provides convenient methods to create a {@code GeneratedWebappListener}
@@ -25,6 +30,38 @@ package de.perdian.apps.devlauncher.impl;
 
 public class GeneratedWebappListenerBuilder {
 
-    private ContextConfigurationFileResolver myContextConfigurationFileResolver = null;
+    private List<GeneratedWebappCopyDefinition> copyDefinitions = new ArrayList<>();
+    private File targetDirectory = null;
+
+    /**
+     * Creates the listener configured with the internal properties
+     */
+    public GeneratedWebappListener createListener() throws IOException {
+        GeneratedWebappListener listener = this.createListenerInstance();
+        listener.setCopyDefinitions(this.getCopyDefinitions());
+        return listener;
+    }
+
+    protected GeneratedWebappListener createListenerInstance() {
+        return new GeneratedWebappListener();
+    }
+
+    // -------------------------------------------------------------------------
+    // --- Property access methods ---------------------------------------------
+    // -------------------------------------------------------------------------
+
+    public List<GeneratedWebappCopyDefinition> getCopyDefinitions() {
+        return this.copyDefinitions;
+    }
+    public void setCopyDefinitions(List<GeneratedWebappCopyDefinition> copyDefinitions) {
+        this.copyDefinitions = copyDefinitions;
+    }
+
+    public File getTargetDirectory() {
+        return this.targetDirectory;
+    }
+    public void setTargetDirectory(File targetDirectory) {
+        this.targetDirectory = targetDirectory;
+    }
 
 }

@@ -22,20 +22,47 @@ import java.io.IOException;
 
 public class ExplodedWebappListenerBuilder {
 
+    private File webappDirectory = null;
     private String webappDirectoryName = "src/main/webapp";
     private File projectDirectory = null;
     private String projectDirectoryName = null;
     private File workspaceDirectory = null;
-    private String workspaceDirectoryName = null;
     private String contextName = null;
     private File contextConfigurationFile = null;
     private String contextConfigurationFileName = null;
 
+    /**
+     * Creates the listener configured with the internal properties
+     */
     public ExplodedWebappListener createListener() throws IOException {
-        ExplodedWebappListener listener = new ExplodedWebappListener();
+        ExplodedWebappListener listener = this.createListenerInstance();
         listener.setContextName(this.getContextName());
         listener.setContextConfigurationFile(this.resolveContextConfigurationFile());
+        listener.setWebappDirectory(this.resolveWebappDirectory());
         return listener;
+    }
+
+    protected ExplodedWebappListener createListenerInstance() {
+        return new ExplodedWebappListener();
+    }
+
+    protected File resolveWebappDirectory() throws IOException {
+        if (this.getWebappDirectory() != null) {
+            if (!this.getWebappDirectory().exists()) {
+                throw new FileNotFoundException("Specified webapp directory not existing at: " + this.getWebappDirectory().getAbsolutePath());
+            } else {
+                return this.getWebappDirectory();
+            }
+        } else {
+            File projectDirectory = this.resolveProjectDirectory();
+            String webappDirectoryName = this.getWebappDirectoryName();
+            File webappDirectory = new File(projectDirectory, webappDirectoryName == null ? "src/main/webapp/" : webappDirectoryName);
+            if (!webappDirectory.exists()) {
+                throw new FileNotFoundException("Computed webapp directory not existing at: " + webappDirectory.getAbsolutePath());
+            } else {
+                return webappDirectory;
+            }
+        }
     }
 
     protected File resolveContextConfigurationFile() throws IOException {
@@ -76,9 +103,7 @@ public class ExplodedWebappListenerBuilder {
                 return this.getWorkspaceDirectory();
             }
         } else {
-            String workspaceDirectoryValue = System.getProperty("devlauncher.workspaceDirectory", null);
-            File workspaceComputedDirectory = workspaceDirectoryValue != null && workspaceDirectoryValue.length() > 0 ? new File(workspaceDirectoryValue).getCanonicalFile() : null;
-            File workspaceDirectory = workspaceComputedDirectory == null ? new File(".").getCanonicalFile().getParentFile() : workspaceComputedDirectory;
+            File workspaceDirectory = new File(".").getCanonicalFile().getParentFile();
             if (!workspaceDirectory.exists()) {
                 throw new FileNotFoundException("Computed workspace directory not existing at: " + workspaceDirectory.getAbsolutePath());
             } else {
@@ -90,6 +115,17 @@ public class ExplodedWebappListenerBuilder {
     // -------------------------------------------------------------------------
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
+
+    public ExplodedWebappListenerBuilder webappDirectory(File webappDirectory) {
+        this.setWebappDirectory(webappDirectory);
+        return this;
+    }
+    private File getWebappDirectory() {
+        return this.webappDirectory;
+    }
+    private void setWebappDirectory(File webappDirectory) {
+        this.webappDirectory = webappDirectory;
+    }
 
     public ExplodedWebappListenerBuilder webappDirectoryName(String directoryName) {
         this.setWebappDirectoryName(directoryName);
@@ -133,17 +169,6 @@ public class ExplodedWebappListenerBuilder {
     }
     private void setWorkspaceDirectory(File workspaceDirectory) {
         this.workspaceDirectory = workspaceDirectory;
-    }
-
-    public ExplodedWebappListenerBuilder workspaceDirectoryName(String workspaceDirectoryName) {
-        this.setWorkspaceDirectoryName(workspaceDirectoryName);
-        return this;
-    }
-    private String getWorkspaceDirectoryName() {
-        return this.workspaceDirectoryName;
-    }
-    private void setWorkspaceDirectoryName(String workspaceDirectoryName) {
-        this.workspaceDirectoryName = workspaceDirectoryName;
     }
 
     public ExplodedWebappListenerBuilder contextName(String contextName) {

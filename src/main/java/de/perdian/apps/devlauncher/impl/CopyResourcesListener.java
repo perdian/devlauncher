@@ -58,11 +58,11 @@ public class CopyResourcesListener implements DevLauncherListener {
     private long myPollingInterval = -1;
 
     @Override
-    public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
+    public void customizeServer(Tomcat tomcat) {
         try {
 
-            File sourceDirectory = this.resolveSourceDirectory(launcher);
-            File targetDirectory = this.resolveTargetDirectory(launcher);
+            File sourceDirectory = this.resolveSourceDirectory();
+            File targetDirectory = this.resolveTargetDirectory();
 
             CopyResourcesOperation copyResourcesOperation = new CopyResourcesOperation();
             copyResourcesOperation.setCopyRecursive(this.isCopyRecursive());
@@ -98,7 +98,7 @@ public class CopyResourcesListener implements DevLauncherListener {
     /**
      * Resolves the source directory from which the files will be read
      */
-    protected File resolveSourceDirectory(DevLauncher launcher) throws IOException {
+    protected File resolveSourceDirectory() throws IOException {
         File sourceDirectory = this.getSourceDirectory();
         if (sourceDirectory == null) {
             String sourceDirectoryValue = System.getProperty(this.getPrefix() + ".sourceDirectory", null);
@@ -116,7 +116,7 @@ public class CopyResourcesListener implements DevLauncherListener {
      * Resolves the source directory to be used if no specific directory has
      * been set using a system property
      */
-    protected File resolveDefaultSourceDirectory(DevLauncher launcher) throws IOException {
+    protected File resolveDefaultSourceDirectory() throws IOException {
         File projectDirectory = DevLauncherHelper.resolveProjectDirectory();
         return new File(projectDirectory, "src/main/resources/");
     }

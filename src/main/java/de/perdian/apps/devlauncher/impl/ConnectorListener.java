@@ -42,7 +42,6 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.perdian.apps.devlauncher.DevLauncher;
 import de.perdian.apps.devlauncher.DevLauncherListener;
 
 /**
@@ -83,9 +82,9 @@ public class ConnectorListener implements DevLauncherListener {
     }
 
     @Override
-    public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
+    public void customizeServer(Tomcat tomcat) {
 
-        Connector connector = this.createConnector(launcher);
+        Connector connector = this.createConnector();
         StringBuilder logMessage = new StringBuilder();
         logMessage.append("Adding").append(this.isSecure() ? " secure" : "").append(" connector");
         if (this.getProtocol() != null) {
@@ -125,7 +124,7 @@ public class ConnectorListener implements DevLauncherListener {
 
     }
 
-    protected Connector createConnector(DevLauncher launcher) {
+    protected Connector createConnector() {
         Connector connector = new Connector(this.getProtocol());
         connector.setPort(this.getPort());
         if (this.getRedirectPort() > 0) {

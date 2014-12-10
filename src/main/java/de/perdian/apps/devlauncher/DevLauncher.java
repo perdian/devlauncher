@@ -34,26 +34,6 @@ public class DevLauncher {
     private List<DevLauncherListener> listeners = new CopyOnWriteArrayList<>();
 
     /**
-     * Creates a new {@code DevLauncher} instance using the default working
-     * directory (<code>.devlauncher</code> within the current user directory
-     * as working directory
-     */
-    public DevLauncher() {
-        this(DevLauncherHelper.resolveWorkingDirectory(".devlauncher"));
-    }
-
-    /**
-     * Creates a new {@code DevLauncher} instance
-     *
-     * @param workingDirectoryName
-     *     the name of the working directory in which to store the temporary
-     *     information
-     */
-    public DevLauncher(String workingDirectoryName) {
-        this(DevLauncherHelper.resolveWorkingDirectory(workingDirectoryName));
-    }
-
-    /**
      * Creates a new {@code DevLauncher} instance
      *
      * @param workingDirectory
@@ -81,7 +61,7 @@ public class DevLauncher {
         tomcat.enableNaming();
 
         log.trace("Invoking DevLauncherListener instances");
-        this.getListeners().forEach(listener -> listener.customizeServer(tomcat, this));
+        this.getListeners().forEach(listener -> listener.customizeServer(tomcat));
 
         log.info("Starting embedded webserver");
         tomcat.start();
