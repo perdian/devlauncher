@@ -95,7 +95,10 @@ public class GeneratedWebappListener extends WebappListener {
         // First make sure all the files are copies
         File sourceDirectory = copyDefinition.getSourceDirectory();
         File targetDirectory = copyDefinition.getTargetDirectoryName() == null ? this.getTargetDirectory() : new File(this.getTargetDirectory(), copyDefinition.getTargetDirectoryName());
-        this.copyResources(sourceDirectory, targetDirectory, copyDefinition);
+        log.trace("Checking resource files from '{}' to copy into '{}'", sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
+
+        int copiedResources = this.copyResources(sourceDirectory, targetDirectory, copyDefinition);
+        log.info("Copied {} resources from {} to {}", copiedResources, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
 
         // Now add a change listener so that whenever a file will change in the
         // future we'll get notified and can react accordingly
@@ -126,7 +129,7 @@ public class GeneratedWebappListener extends WebappListener {
             if (Lifecycle.STOP_EVENT.equals(event.getType())) {
                 try {
                     watchService.close();
-                } catch(Exception e) {
+                } catch (Exception e) {
                     log.warn("Error occured while closing WatchService", e);
                 }
             }
@@ -144,17 +147,23 @@ public class GeneratedWebappListener extends WebappListener {
     /**
      * Copies the resources from the source directory into the target directory
      */
-    protected void copyResources(File sourceDirectory, File targetDirectory, GeneratedWebappCopyDefinition copyDefinition) throws IOException {
+    protected int copyResources(File sourceDirectory, File targetDirectory, GeneratedWebappCopyDefinition copyDefinition) throws IOException {
         File[] sourceFiles = copyDefinition.getFileFilter() == null ? sourceDirectory.listFiles() : sourceDirectory.listFiles(copyDefinition.getFileFilter());
         if (sourceFiles != null) {
+            int copiedFiles = 0;
             for (File sourceFile : sourceFiles) {
                 File targetFile = new File(targetDirectory, sourceFile.getName());
                 if (sourceFile.isDirectory()) {
-                    this.copyResources(sourceFile, targetFile, copyDefinition);
+                    copiedFiles += this.copyResources(sourceFile, targetFile, copyDefinition);
                 } else if (sourceFile.isFile() && sourceFile.canRead()) {
-                    this.copyResource(sourceFile, targetFile);
+                    if (this.copyResource(sourceFile, targetFile)) {
+                        copiedFiles++;
+                    }
                 }
             }
+            return copiedFiles;
+        } else {
+            return 0;
         }
     }
 
@@ -165,10 +174,13 @@ public class GeneratedWebappListener extends WebappListener {
      *     the resource to be copied
      * @param targetResource
      *     the target resource into which to copy the data
+     * @return
+     *     {@code true} if the resource was copied, {@code false} if the
+     *     resource was not copied because no change was necessary
      * @throws IOException
      *     thrown if the copy operation fails
      */
-    protected void copyResource(File sourceResource, File targetResource) throws IOException {
+    protected boolean copyResource(File sourceResource, File targetResource) throws IOException {
 
         boolean targetRequiresUpdate = !targetResource.exists();
         targetRequiresUpdate |= sourceResource.length() != targetResource.length();
@@ -179,6 +191,9 @@ public class GeneratedWebappListener extends WebappListener {
                 targetResource.getParentFile().mkdirs();
             }
             Files.copy(sourceResource.toPath(), targetResource.toPath(), StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        } else {
+            return false;
         }
 
     }
