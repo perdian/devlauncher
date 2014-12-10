@@ -16,14 +16,16 @@
  */
 package de.perdian.apps.devlauncher.impl;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.perdian.apps.devlauncher.DevLauncher;
 import de.perdian.apps.devlauncher.DevLauncherListener;
 
 /**
@@ -37,25 +39,25 @@ public abstract class WebappListener implements DevLauncherListener {
     private static final Logger log = LoggerFactory.getLogger(WebappListener.class);
 
     private String contextName = null;
-    private File contextConfigurationFile = null;
+    private Path contextConfigurationFile = null;
 
     @Override
-    public void customizeServer(Tomcat tomcat) {
+    public void customizeServer(Tomcat tomcat, DevLauncher devLauncher) {
 
-        File webappDirectory = this.resolveWebapppDirectory();
-        log.debug("Resolved webapp directory for webapp context '" + this.getContextName() + "' to: " + webappDirectory.getAbsolutePath());
+        Path webappDirectory = this.resolveWebapppDirectory();
+        log.debug("Resolved webapp directory for webapp context '" + this.getContextName() + "' to: " + webappDirectory);
 
         Context webappContext = this.createWebappContext(tomcat, webappDirectory);
-        File contextConfigurationFile = this.getContextConfigurationFile();
+        Path contextConfigurationFile = this.getContextConfigurationFile();
         if (contextConfigurationFile != null) {
-            if (!contextConfigurationFile.exists()) {
-                log.warn("Resolved context configuration file for webapp context '" + this.getContextName() + "' not existing at: " + contextConfigurationFile.getAbsolutePath());
+            if (!Files.exists(contextConfigurationFile)) {
+                log.warn("Resolved context configuration file for webapp context '" + this.getContextName() + "' not existing at: " + contextConfigurationFile);
             } else {
                 try {
-                    log.debug("Resolved context configuration file for webapp context '" + this.getContextName() + "' to: " + contextConfigurationFile.getAbsolutePath());
-                    webappContext.setConfigFile(contextConfigurationFile.toURI().toURL());
+                    log.debug("Resolved context configuration file for webapp context '" + this.getContextName() + "' to: " + contextConfigurationFile);
+                    webappContext.setConfigFile(contextConfigurationFile.toUri().toURL());
                 } catch (IOException e) {
-                    throw new IllegalArgumentException("Invalid context configuration file: " + contextConfigurationFile.getAbsolutePath(), e);
+                    throw new IllegalArgumentException("Invalid context configuration file: " + contextConfigurationFile, e);
                 }
             }
         }
@@ -65,11 +67,11 @@ public abstract class WebappListener implements DevLauncherListener {
     /**
      * Creates the web application context
      */
-    protected Context createWebappContext(Tomcat tomcat, File webappDirectory) {
+    protected Context createWebappContext(Tomcat tomcat, Path webappDirectory) {
         try {
-            return tomcat.addWebapp("/" + this.getContextName(), webappDirectory.getCanonicalPath());
+            return tomcat.addWebapp("/" + this.getContextName(), webappDirectory.toFile().getCanonicalPath());
         } catch (Exception e) {
-            throw new RuntimeException("Cannot create webapp context for name " + this.getContextName() + " and directory " + webappDirectory.getAbsolutePath(), e);
+            throw new RuntimeException("Cannot create webapp context for name " + this.getContextName() + " and directory " + webappDirectory, e);
         }
     }
 
@@ -77,7 +79,7 @@ public abstract class WebappListener implements DevLauncherListener {
      * Resolves the target directory that should be used as base for the web
      * application to be initialized
      */
-    protected abstract File resolveWebapppDirectory();
+    protected abstract Path resolveWebapppDirectory();
 
     // -------------------------------------------------------------------------
     // --- Property access methods ---------------------------------------------
@@ -90,10 +92,10 @@ public abstract class WebappListener implements DevLauncherListener {
         this.contextName = contextName;
     }
 
-    public File getContextConfigurationFile() {
+    public Path getContextConfigurationFile() {
         return this.contextConfigurationFile;
     }
-    public void setContextConfigurationFile(File contextConfigurationFile) {
+    public void setContextConfigurationFile(Path contextConfigurationFile) {
         this.contextConfigurationFile = contextConfigurationFile;
     }
 

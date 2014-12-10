@@ -1,7 +1,7 @@
 package de.perdian.apps.devlauncher.impl;
 
-import java.io.File;
-import java.io.FileFilter;
+import java.nio.file.Path;
+import java.util.function.Predicate;
 
 /**
  * Defines a location from which the files are copied into the target
@@ -11,8 +11,8 @@ import java.io.FileFilter;
  */
 public class GeneratedWebappCopyDefinition {
 
-    private File sourceDirectory = null;
-    private FileFilter fileFilter = null;
+    private Path sourceDirectory = null;
+    private Predicate<Path> fileFilter = null;
     private String targetDirectoryName = null;
 
     // ---------------------------------------------------------------------
@@ -23,21 +23,21 @@ public class GeneratedWebappCopyDefinition {
      * Gets the source directory from where the files will be read and
      * copied to the target directory/directories.
      */
-    public File getSourceDirectory() {
+    public Path getSourceDirectory() {
         return this.sourceDirectory;
     }
-    public void setSourceDirectory(File sourceDirectory) {
+    public void setSourceDirectory(Path sourceDirectory) {
         this.sourceDirectory = sourceDirectory;
     }
 
     /**
-     * Gets the {@code FileFilter} that specifies which of the files within
+     * Gets the filter that specifies which of the files within
      * the source directory will be copied
      */
-    public FileFilter getFileFilter() {
+    public Predicate<Path> getFileFilter() {
         return this.fileFilter;
     }
-    public void setFileFilter(FileFilter fileFilter) {
+    public void setFileFilter(Predicate<Path> fileFilter) {
         this.fileFilter = fileFilter;
     }
 

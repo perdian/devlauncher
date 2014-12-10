@@ -16,10 +16,11 @@
  */
 package de.perdian.apps.devlauncher.impl;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 
 /**
@@ -31,19 +32,47 @@ import java.util.List;
 public class GeneratedWebappListenerBuilder {
 
     private List<GeneratedWebappCopyDefinition> copyDefinitions = new ArrayList<>();
-    private File targetDirectory = null;
+    private Path targetDirectory = null;
 
     /**
      * Creates the listener configured with the internal properties
      */
     public GeneratedWebappListener createListener() throws IOException {
         GeneratedWebappListener listener = this.createListenerInstance();
+        listener.setTargetDirectory(this.getTargetDirectory());
         listener.setCopyDefinitions(this.getCopyDefinitions());
         return listener;
     }
 
     protected GeneratedWebappListener createListenerInstance() {
         return new GeneratedWebappListener();
+    }
+
+
+    // -------------------------------------------------------------------------
+    // --- Copy definition -----------------------------------------------------
+    // -------------------------------------------------------------------------
+
+    public GeneratedWebappListenerBuilder addCopyDefinition(Path sourceDirectory) {
+        return this.addCopyDefinition(sourceDirectory, null, null);
+    }
+
+    public GeneratedWebappListenerBuilder addCopyDefinition(Path sourceDirectory, Predicate<Path> fileFilter) {
+        return this.addCopyDefinition(sourceDirectory, null, fileFilter);
+    }
+
+    public GeneratedWebappListenerBuilder addCopyDefinition(Path sourceDirectory, String targetDirectoryName) {
+        return this.addCopyDefinition(sourceDirectory, targetDirectoryName, null);
+    }
+
+    public GeneratedWebappListenerBuilder addCopyDefinition(Path sourceDirectory, String targetDirectoryName, Predicate<Path> fileFilter) {
+        GeneratedWebappCopyDefinition copyDefinition = new GeneratedWebappCopyDefinition();
+        copyDefinition.setSourceDirectory(sourceDirectory);
+        copyDefinition.setTargetDirectoryName(targetDirectoryName);
+        copyDefinition.setFileFilter(fileFilter);
+        this.getCopyDefinitions().add(copyDefinition);
+        return this;
+
     }
 
     // -------------------------------------------------------------------------
@@ -57,10 +86,15 @@ public class GeneratedWebappListenerBuilder {
         this.copyDefinitions = copyDefinitions;
     }
 
-    public File getTargetDirectory() {
+    public GeneratedWebappListenerBuilder targetDirectory(Path targetDirectory) {
+        this.setTargetDirectory(targetDirectory);
+        return this;
+    }
+
+    public Path getTargetDirectory() {
         return this.targetDirectory;
     }
-    public void setTargetDirectory(File targetDirectory) {
+    public void setTargetDirectory(Path targetDirectory) {
         this.targetDirectory = targetDirectory;
     }
 

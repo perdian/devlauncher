@@ -19,16 +19,18 @@ package de.perdian.apps.devlauncher.impl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class ExplodedWebappListenerBuilder {
 
-    private File webappDirectory = null;
+    private Path webappDirectory = null;
     private String webappDirectoryName = "src/main/webapp";
-    private File projectDirectory = null;
+    private Path projectDirectory = null;
     private String projectDirectoryName = null;
-    private File workspaceDirectory = null;
+    private Path workspaceDirectory = null;
     private String contextName = null;
-    private File contextConfigurationFile = null;
+    private Path contextConfigurationFile = null;
     private String contextConfigurationFileName = null;
 
     /**
@@ -46,66 +48,65 @@ public class ExplodedWebappListenerBuilder {
         return new ExplodedWebappListener();
     }
 
-    protected File resolveWebappDirectory() throws IOException {
+    protected Path resolveWebappDirectory() throws IOException {
         if (this.getWebappDirectory() != null) {
-            if (!this.getWebappDirectory().exists()) {
-                throw new FileNotFoundException("Specified webapp directory not existing at: " + this.getWebappDirectory().getAbsolutePath());
+            if (!Files.exists(this.getWebappDirectory())) {
+                throw new FileNotFoundException("Specified webapp directory not existing at: " + this.getWebappDirectory());
             } else {
                 return this.getWebappDirectory();
             }
         } else {
-            File projectDirectory = this.resolveProjectDirectory();
+            Path projectDirectory = this.resolveProjectDirectory();
             String webappDirectoryName = this.getWebappDirectoryName();
-            File webappDirectory = new File(projectDirectory, webappDirectoryName == null ? "src/main/webapp/" : webappDirectoryName);
-            if (!webappDirectory.exists()) {
-                throw new FileNotFoundException("Computed webapp directory not existing at: " + webappDirectory.getAbsolutePath());
+            Path webappDirectory = projectDirectory.resolve(webappDirectoryName == null ? "src/main/webapp/" : webappDirectoryName);
+            if (!Files.exists(webappDirectory)) {
+                throw new FileNotFoundException("Computed webapp directory not existing at: " + webappDirectory);
             } else {
                 return webappDirectory;
             }
         }
     }
 
-    protected File resolveContextConfigurationFile() throws IOException {
+    protected Path resolveContextConfigurationFile() throws IOException {
         if (this.getContextConfigurationFile() != null) {
             return this.getContextConfigurationFile();
         } else if (this.getContextConfigurationFileName() != null) {
-            File projectDirectory = this.resolveProjectDirectory();
-            return new File(projectDirectory, this.getContextConfigurationFileName()).getCanonicalFile();
+            return this.resolveProjectDirectory().resolve(this.getContextConfigurationFileName());
         } else {
             return null;
         }
     }
 
-    protected File resolveProjectDirectory() throws IOException {
+    protected Path resolveProjectDirectory() throws IOException {
         if (this.getProjectDirectory() != null) {
-            if (!this.getProjectDirectory().exists()) {
-                throw new FileNotFoundException("Specified project directory not existing at: " + this.getProjectDirectory().getAbsolutePath());
+            if (!Files.exists(this.getProjectDirectory())) {
+                throw new FileNotFoundException("Specified project directory not existing at: " + this.getProjectDirectory());
             } else {
                 return this.getProjectDirectory();
             }
         } else {
-            File workspaceDirectory = this.resolveWorkspaceDirectory();
+            Path workspaceDirectory = this.resolveWorkspaceDirectory();
             String projectDirectoryName = this.getProjectDirectoryName() == null ? this.getContextName() : this.getProjectDirectoryName();
-            File projectDirectory = new File(workspaceDirectory, projectDirectoryName).getCanonicalFile();
-            if (!projectDirectory.exists()) {
-                throw new FileNotFoundException("Computed project directory not existing at: " + projectDirectory.getAbsolutePath());
+            Path projectDirectory = workspaceDirectory.resolve(projectDirectoryName);
+            if (!Files.exists(projectDirectory)) {
+                throw new FileNotFoundException("Computed project directory not existing at: " + projectDirectory);
             } else {
                 return projectDirectory;
             }
         }
     }
 
-    protected File resolveWorkspaceDirectory() throws IOException {
+    protected Path resolveWorkspaceDirectory() throws IOException {
         if (this.getWorkspaceDirectory() != null) {
-            if (!this.getWorkspaceDirectory().exists()) {
-                throw new FileNotFoundException("Specified workspace directory not existing at: " + this.getWorkspaceDirectory().getAbsolutePath());
+            if (!Files.exists(this.getWorkspaceDirectory())) {
+                throw new FileNotFoundException("Specified workspace directory not existing at: " + this.getWorkspaceDirectory());
             } else {
                 return this.getWorkspaceDirectory();
             }
         } else {
-            File workspaceDirectory = new File(".").getCanonicalFile().getParentFile();
-            if (!workspaceDirectory.exists()) {
-                throw new FileNotFoundException("Computed workspace directory not existing at: " + workspaceDirectory.getAbsolutePath());
+            Path workspaceDirectory = new File(".").getCanonicalFile().getParentFile().toPath();
+            if (!Files.exists(workspaceDirectory)) {
+                throw new FileNotFoundException("Computed workspace directory not existing at: " + workspaceDirectory);
             } else {
                 return workspaceDirectory;
             }
@@ -116,14 +117,14 @@ public class ExplodedWebappListenerBuilder {
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
 
-    public ExplodedWebappListenerBuilder webappDirectory(File webappDirectory) {
+    public ExplodedWebappListenerBuilder webappDirectory(Path webappDirectory) {
         this.setWebappDirectory(webappDirectory);
         return this;
     }
-    private File getWebappDirectory() {
+    private Path getWebappDirectory() {
         return this.webappDirectory;
     }
-    private void setWebappDirectory(File webappDirectory) {
+    private void setWebappDirectory(Path webappDirectory) {
         this.webappDirectory = webappDirectory;
     }
 
@@ -138,14 +139,14 @@ public class ExplodedWebappListenerBuilder {
         this.webappDirectoryName = webappDirectoryName;
     }
 
-    public ExplodedWebappListenerBuilder projectDirectory(File projectDirectory) {
+    public ExplodedWebappListenerBuilder projectDirectory(Path projectDirectory) {
         this.setProjectDirectory(projectDirectory);
         return this;
     }
-    private File getProjectDirectory() {
+    private Path getProjectDirectory() {
         return this.projectDirectory;
     }
-    private void setProjectDirectory(File projectDirectory) {
+    private void setProjectDirectory(Path projectDirectory) {
         this.projectDirectory = projectDirectory;
     }
 
@@ -160,14 +161,14 @@ public class ExplodedWebappListenerBuilder {
         this.projectDirectoryName = projectDirectoryName;
     }
 
-    public ExplodedWebappListenerBuilder workspaceDirectory(File workspaceDirectory) {
+    public ExplodedWebappListenerBuilder workspaceDirectory(Path workspaceDirectory) {
         this.setWorkspaceDirectory(workspaceDirectory);
         return this;
     }
-    private File getWorkspaceDirectory() {
+    private Path getWorkspaceDirectory() {
         return this.workspaceDirectory;
     }
-    private void setWorkspaceDirectory(File workspaceDirectory) {
+    private void setWorkspaceDirectory(Path workspaceDirectory) {
         this.workspaceDirectory = workspaceDirectory;
     }
 
@@ -182,14 +183,14 @@ public class ExplodedWebappListenerBuilder {
         this.contextName = contextName;
     }
 
-    public ExplodedWebappListenerBuilder contextConfigurationFile(File contextConfigurationFile) {
+    public ExplodedWebappListenerBuilder contextConfigurationFile(Path contextConfigurationFile) {
         this.setContextConfigurationFile(contextConfigurationFile);
         return this;
     }
-    private File getContextConfigurationFile() {
+    private Path getContextConfigurationFile() {
         return this.contextConfigurationFile;
     }
-    private void setContextConfigurationFile(File contextConfigurationFile) {
+    private void setContextConfigurationFile(Path contextConfigurationFile) {
         this.contextConfigurationFile = contextConfigurationFile;
     }
 

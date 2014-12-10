@@ -16,7 +16,7 @@
  */
 package de.perdian.apps.devlauncher;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -30,7 +30,7 @@ public class DevLauncher {
 
     private Integer defaultPort = Integer.valueOf(8080);
     private Integer shutdownPort = Integer.valueOf(8081);
-    private File workingDirectory = null;
+    private Path workingDirectory = null;
     private List<DevLauncherListener> listeners = new CopyOnWriteArrayList<>();
 
     /**
@@ -39,7 +39,7 @@ public class DevLauncher {
      * @param workingDirectory
      *     the working directory in which to store the temporary information
      */
-    public DevLauncher(File workingDirectory) {
+    public DevLauncher(Path workingDirectory) {
         this.setWorkingDirectory(workingDirectory);
     }
 
@@ -56,12 +56,12 @@ public class DevLauncher {
 
         // No create and configure the embedded tomcat webserver
         Tomcat tomcat = new Tomcat();
-        tomcat.setBaseDir(new File(this.getWorkingDirectory(), "tomcat/").getCanonicalPath());
+        tomcat.setBaseDir(this.getWorkingDirectory().resolve("tomcat/").toFile().getCanonicalPath());
         tomcat.setPort(this.getDefaultPort());
         tomcat.enableNaming();
 
         log.trace("Invoking DevLauncherListener instances");
-        this.getListeners().forEach(listener -> listener.customizeServer(tomcat));
+        this.getListeners().forEach(listener -> listener.customizeServer(tomcat, this));
 
         log.info("Starting embedded webserver");
         tomcat.start();
@@ -91,10 +91,10 @@ public class DevLauncher {
      * Gets the working directory in which the running webserver instance can
      * store it's temporary data and other relevant files
      */
-    public File getWorkingDirectory() {
+    public Path getWorkingDirectory() {
         return this.workingDirectory;
     }
-    public void setWorkingDirectory(File workingDirectory) {
+    public void setWorkingDirectory(Path workingDirectory) {
         this.workingDirectory = workingDirectory;
     }
 

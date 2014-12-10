@@ -16,16 +16,9 @@
  */
 package de.perdian.apps.devlauncher.impl;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.util.List;
 
 import org.apache.catalina.Context;
@@ -50,21 +43,26 @@ public class GeneratedWebappListener extends WebappListener {
 
     private static final Logger log = LoggerFactory.getLogger(GeneratedWebappListener.class);
 
-    private File targetDirectory = null;
+    private Path targetDirectory = null;
     private List<GeneratedWebappCopyDefinition> copyDefinitions = null;
 
     @Override
-    protected File resolveWebapppDirectory() {
-        File targetDirectory = this.getTargetDirectory();
-        if (!targetDirectory.exists()) {
-            log.debug("Creating web application target directory at: {}", targetDirectory.getAbsolutePath());
-            targetDirectory.mkdirs();
+    protected Path resolveWebapppDirectory() {
+        if (this.getTargetDirectory() == null) {
+            throw new IllegalArgumentException("Parameter 'targetDirectory' not set!");
+        } else if (!Files.exists(this.getTargetDirectory().getParent())) {
+            try {
+                log.debug("Creating web application target directory at: {}", this.getTargetDirectory().getParent());
+                Files.createDirectory(this.getTargetDirectory().getParent());
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot create target directory at: " + this.getTargetDirectory().getParent());
+            }
         }
-        return targetDirectory;
+        return this.getTargetDirectory();
     }
 
     @Override
-    protected Context createWebappContext(Tomcat tomcat, File webappDirectory) {
+    protected Context createWebappContext(Tomcat tomcat, Path webappDirectory) {
 
         // Make sure the target content has been added to the target directory
         this.initializeCopyDefinitions(tomcat);
@@ -78,12 +76,16 @@ public class GeneratedWebappListener extends WebappListener {
      * Make sure the source directories and the target directories are in sync
      */
     protected void initializeCopyDefinitions(Tomcat tomcat) {
-        try {
-            for (GeneratedWebappCopyDefinition copyDefinition : this.getCopyDefinitions()) {
-                this.initializeCopyDefinition(copyDefinition, tomcat);
+        if (!this.getCopyDefinitions().isEmpty()) {
+            try {
+                log.info("Synchronizing {} definitions", this.getCopyDefinitions().size());
+                for (GeneratedWebappCopyDefinition copyDefinition : this.getCopyDefinitions()) {
+                    this.initializeCopyDefinition(copyDefinition, tomcat);
+                }
+                log.info("Completed synchronizing {} definitions", this.getCopyDefinitions().size());
+            } catch (IOException e) {
+                throw new RuntimeException("Cannot copy resources into target directory: " + this.getTargetDirectory(), e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot copy resources into target directory: " + this.getTargetDirectory().getAbsolutePath(), e);
         }
     }
 
@@ -92,43 +94,17 @@ public class GeneratedWebappListener extends WebappListener {
      */
     protected void initializeCopyDefinition(GeneratedWebappCopyDefinition copyDefinition, Tomcat tomcat) throws IOException {
 
-        // First make sure all the files are copies
-        File sourceDirectory = copyDefinition.getSourceDirectory();
-        File targetDirectory = copyDefinition.getTargetDirectoryName() == null ? this.getTargetDirectory() : new File(this.getTargetDirectory(), copyDefinition.getTargetDirectoryName());
-        log.trace("Checking resource files from '{}' to copy into '{}'", sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
-
-        int copiedResources = this.copyResources(sourceDirectory, targetDirectory, copyDefinition);
-        log.info("Copied {} resources from {} to {}", copiedResources, sourceDirectory.getAbsolutePath(), targetDirectory.getAbsolutePath());
-
         // Now add a change listener so that whenever a file will change in the
         // future we'll get notified and can react accordingly
-        Path sourcePath = sourceDirectory.toPath();
-        Path targetPath = targetDirectory.toPath();
-        WatchService watchService = sourcePath.getFileSystem().newWatchService();
-        sourcePath.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
-        Thread watchServiceProcessorThread = new Thread(() -> {
-            try {
-                while (true) {
-                    WatchKey nextWatchKey = watchService.take();
-                    for (WatchEvent<?> watchEvent : nextWatchKey.pollEvents()) {
-                        this.processWatchEvent(watchEvent, sourcePath, targetPath, copyDefinition);
-                    }
-                }
-            } catch (InterruptedException e) {
-                log.warn("WatchService has been stopped");
-            } catch (ClosedWatchServiceException e) {
-                log.trace("WatchService has been stopped");
-            }
-        });
-        watchServiceProcessorThread.setName(this.getClass().getSimpleName() + "[ResourceWatcherThread for " + copyDefinition + "]");
-        watchServiceProcessorThread.start();
+        Path targetDirectoryPath = copyDefinition.getTargetDirectoryName() == null ? this.getTargetDirectory() : this.getTargetDirectory().resolve(copyDefinition.getTargetDirectoryName());
+        GeneratedWebappCopyHandler copyHandler = GeneratedWebappCopyHandler.create(copyDefinition.getSourceDirectory(), targetDirectoryPath, copyDefinition.getFileFilter());
 
         // Make sure the synchronization stops once the tomcat is stopped as
         // well
         tomcat.getServer().addLifecycleListener(event -> {
             if (Lifecycle.STOP_EVENT.equals(event.getType())) {
                 try {
-                    watchService.close();
+                    copyHandler.close();
                 } catch (Exception e) {
                     log.warn("Error occured while closing WatchService", e);
                 }
@@ -137,66 +113,6 @@ public class GeneratedWebappListener extends WebappListener {
 
     }
 
-    /**
-     * Processes the watch event and execute the copy operation
-     */
-    protected void processWatchEvent(WatchEvent<?> watchEvent, Path sourcePath, Path targetPath, GeneratedWebappCopyDefinition copyDefinition) {
-        System.err.println(watchEvent);
-    }
-
-    /**
-     * Copies the resources from the source directory into the target directory
-     */
-    protected int copyResources(File sourceDirectory, File targetDirectory, GeneratedWebappCopyDefinition copyDefinition) throws IOException {
-        File[] sourceFiles = copyDefinition.getFileFilter() == null ? sourceDirectory.listFiles() : sourceDirectory.listFiles(copyDefinition.getFileFilter());
-        if (sourceFiles != null) {
-            int copiedFiles = 0;
-            for (File sourceFile : sourceFiles) {
-                File targetFile = new File(targetDirectory, sourceFile.getName());
-                if (sourceFile.isDirectory()) {
-                    copiedFiles += this.copyResources(sourceFile, targetFile, copyDefinition);
-                } else if (sourceFile.isFile() && sourceFile.canRead()) {
-                    if (this.copyResource(sourceFile, targetFile)) {
-                        copiedFiles++;
-                    }
-                }
-            }
-            return copiedFiles;
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * Copy the given resource into the target directory
-     *
-     * @param sourceResource
-     *     the resource to be copied
-     * @param targetResource
-     *     the target resource into which to copy the data
-     * @return
-     *     {@code true} if the resource was copied, {@code false} if the
-     *     resource was not copied because no change was necessary
-     * @throws IOException
-     *     thrown if the copy operation fails
-     */
-    protected boolean copyResource(File sourceResource, File targetResource) throws IOException {
-
-        boolean targetRequiresUpdate = !targetResource.exists();
-        targetRequiresUpdate |= sourceResource.length() != targetResource.length();
-        targetRequiresUpdate |= sourceResource.lastModified() > targetResource.lastModified();
-
-        if (targetRequiresUpdate) {
-            if (!targetResource.getParentFile().exists()) {
-                targetResource.getParentFile().mkdirs();
-            }
-            Files.copy(sourceResource.toPath(), targetResource.toPath(), StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
-            return true;
-        } else {
-            return false;
-        }
-
-    }
     // -------------------------------------------------------------------------
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
@@ -208,10 +124,10 @@ public class GeneratedWebappListener extends WebappListener {
         this.copyDefinitions = copyDefinitions;
     }
 
-    public File getTargetDirectory() {
+    public Path getTargetDirectory() {
         return this.targetDirectory;
     }
-    public void setTargetDirectory(File targetDirectory) {
+    public void setTargetDirectory(Path targetDirectory) {
         this.targetDirectory = targetDirectory;
     }
 

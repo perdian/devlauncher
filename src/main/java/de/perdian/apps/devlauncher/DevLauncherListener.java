@@ -32,7 +32,9 @@ public interface DevLauncherListener {
      *
      * @param tomcat
      *     the Tomcat instance to be customized
+     * @param devLauncher
+     *     the launcher instance in which the listener is to be executed
      */
-    void customizeServer(Tomcat tomcat);
+    void customizeServer(Tomcat tomcat, DevLauncher devLauncher);
 
 }

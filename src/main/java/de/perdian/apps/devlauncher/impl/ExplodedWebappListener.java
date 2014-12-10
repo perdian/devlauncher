@@ -16,15 +16,15 @@
  */
 package de.perdian.apps.devlauncher.impl;
 
-import java.io.File;
+import java.nio.file.Path;
 
 
 public class ExplodedWebappListener extends WebappListener {
 
-    private File webappDirectory = null;
+    private Path webappDirectory = null;
 
     @Override
-    protected File resolveWebapppDirectory() {
+    protected Path resolveWebapppDirectory() {
         return this.getWebappDirectory();
     }
 
@@ -32,10 +32,10 @@ public class ExplodedWebappListener extends WebappListener {
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
 
-    public File getWebappDirectory() {
+    public Path getWebappDirectory() {
         return this.webappDirectory;
     }
-    public void setWebappDirectory(File webappDirectory) {
+    public void setWebappDirectory(Path webappDirectory) {
         this.webappDirectory = webappDirectory;
     }
 
