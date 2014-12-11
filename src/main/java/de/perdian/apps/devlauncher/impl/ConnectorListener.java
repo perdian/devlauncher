@@ -18,13 +18,12 @@ package de.perdian.apps.devlauncher.impl;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
@@ -42,6 +41,7 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.perdian.apps.devlauncher.DevLauncher;
 import de.perdian.apps.devlauncher.DevLauncherListener;
 
 /**
@@ -67,22 +67,8 @@ public class ConnectorListener implements DevLauncherListener {
     private String myUriEncoding = "UTF-8";
     private boolean stateSecure = false;
 
-    /**
-     * Creates a new listener instance
-     *
-     * @param port
-     *     the port on which the listener will listen for incoming requests
-     */
-    public ConnectorListener(int port) {
-        if (port < 0) {
-            throw new IllegalArgumentException("Parameter 'port' must not be negative! [Was: " + port + "]");
-        } else {
-            this.setPort(port);
-        }
-    }
-
     @Override
-    public void customizeServer(Tomcat tomcat) {
+    public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
 
         Connector connector = this.createConnector();
         StringBuilder logMessage = new StringBuilder();
@@ -101,7 +87,7 @@ public class ConnectorListener implements DevLauncherListener {
         if (this.isSecure()) {
             try {
 
-                File keystoreFile = new File(launcher.getWorkingDirectory(), "config/keystore");
+                Path keystoreFile = launcher.getWorkingDirectory().resolve("config/keystore");
                 KeyStore keyStore = this.ensureKeyStore(keystoreFile);
                 this.ensureKeyInStore(keystoreFile, keyStore);
 
@@ -109,7 +95,7 @@ public class ConnectorListener implements DevLauncherListener {
                 connector.setScheme("https");
                 connector.setAttribute("keyAlias", TLS_KEY_NAME);
                 connector.setAttribute("keyPass", TLS_KEY_PASSWORD);
-                connector.setAttribute("keystoreFile", keystoreFile.getCanonicalPath());
+                connector.setAttribute("keystoreFile", keystoreFile.toFile().getCanonicalPath());
                 connector.setAttribute("keystorePass", KEYSTORE_PASSWORD);
                 connector.setAttribute("clientAuth", "false");
                 connector.setAttribute("sslProtocol", "TLS");
@@ -141,7 +127,7 @@ public class ConnectorListener implements DevLauncherListener {
     // --- TLS keystore handling -----------------------------------------------
     // -------------------------------------------------------------------------
 
-    private Key ensureKeyInStore(File keystoreFile, KeyStore keyStore) throws GeneralSecurityException, IOException {
+    private Key ensureKeyInStore(Path keystoreFile, KeyStore keyStore) throws GeneralSecurityException, IOException {
         Key key = this.lookupKeyFromStore(keyStore);
         if (key == null) {
 
@@ -168,11 +154,11 @@ public class ConnectorListener implements DevLauncherListener {
             keyStore.setKeyEntry(TLS_KEY_NAME, keyPair.getPrivate(), TLS_KEY_PASSWORD.toCharArray(), new java.security.cert.Certificate[] { certificate });
 
             // Write the keystore into the target file
-            log.debug("Updating KeyStore at: " + keystoreFile.getAbsolutePath());
-            if (!keystoreFile.getParentFile().exists()) {
-                keystoreFile.getParentFile().mkdirs();
+            log.debug("Updating KeyStore at: " + keystoreFile);
+            if (!Files.exists(keystoreFile.getParent())) {
+                Files.createDirectories(keystoreFile.getParent());
             }
-            try (OutputStream keyStoreStream = new BufferedOutputStream(new FileOutputStream(keystoreFile))) {
+            try (OutputStream keyStoreStream = new BufferedOutputStream(Files.newOutputStream(keystoreFile))) {
                 keyStore.store(keyStoreStream, KEYSTORE_PASSWORD.toCharArray());
                 keyStoreStream.flush();
             }
@@ -194,16 +180,16 @@ public class ConnectorListener implements DevLauncherListener {
         }
     }
 
-    private KeyStore ensureKeyStore(File keystoreFile) throws GeneralSecurityException, IOException {
+    private KeyStore ensureKeyStore(Path keystoreFile) throws GeneralSecurityException, IOException {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null, null);
-        if (keystoreFile.exists()) {
+        if (Files.exists(keystoreFile)) {
             try {
-                try (InputStream keystoreFileStream = new BufferedInputStream(new FileInputStream(keystoreFile))) {
+                try (InputStream keystoreFileStream = new BufferedInputStream(Files.newInputStream(keystoreFile))) {
                     keyStore.load(keystoreFileStream, KEYSTORE_PASSWORD.toCharArray());
                 }
             } catch (Exception e) {
-                log.warn("Cannot load KeyStore from file at: " + keystoreFile.getAbsolutePath());
+                log.warn("Cannot load KeyStore from file at: " + keystoreFile);
             }
         }
         return keyStore;
@@ -213,54 +199,38 @@ public class ConnectorListener implements DevLauncherListener {
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
 
-    public int getPort() {
+    public Integer getPort() {
         return this.myPort;
     }
-    private void setPort(int port) {
+    public void setPort(Integer port) {
         this.myPort = port;
     }
 
-    public ConnectorListener redirectPort(int port) {
-        this.setRedirectPort(port);
-        return this;
-    }
-    public int getRedirectPort() {
+    public Integer getRedirectPort() {
         return this.myRedirectPort;
     }
-    private void setRedirectPort(int redirectPort) {
+    public void setRedirectPort(Integer redirectPort) {
         this.myRedirectPort = redirectPort;
     }
 
-    public ConnectorListener protocol(String protocol) {
-        this.setProtocol(protocol);
-        return this;
-    }
     public String getProtocol() {
         return this.myProtocol;
     }
-    private void setProtocol(String protocol) {
+    public void setProtocol(String protocol) {
         this.myProtocol = protocol;
     }
 
-    public ConnectorListener secure(boolean secure) {
-        this.setSecure(secure);
-        return this;
-    }
     public boolean isSecure() {
         return this.stateSecure;
     }
-    private void setSecure(boolean secure) {
+    public void setSecure(boolean secure) {
         this.stateSecure = secure;
     }
 
-    public ConnectorListener uriEncoding(String encoding) {
-        this.setUriEncoding(encoding);
-        return this;
-    }
     public String getUriEncoding() {
         return this.myUriEncoding;
     }
-    private void setUriEncoding(String uRIEncoding) {
+    public void setUriEncoding(String uRIEncoding) {
         this.myUriEncoding = uRIEncoding;
     }
 
