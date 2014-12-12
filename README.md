@@ -17,7 +17,7 @@ dependency:
       <dependency>
           <groupId>de.perdian.apps.devlauncher</groupId>
           <artifactId>devlauncher</artifactId>
-          <version>3.2.1</version>
+          <version>4.0.0</version>
       </dependency>
 
 ## Usage
@@ -34,8 +34,8 @@ configuration is started looks like this:
 
           public static void main(String[] args) throws Exception {
 
-              DevLauncher devLauncher = DevLauncher.createLauncher();
-              devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
+              DevLauncher devLauncher = new DevLauncher();
+              devLauncher.addListener(new ExplodedWebappListenerBuilder().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
               devLauncher.launch();
 
           }
@@ -66,88 +66,15 @@ take care of checking whether or not there is any active instance.
 If you do not want this feature to be available, you can disable it by simply
 setting the shutdownListenerPort to a value of 0 or less.
 
-## Adding additional configuration options
-
-The DevLauncher class can be configured with a series of additional options to
-aid in your development cycle.
-
-### Properties initialization
-
-Additional properties will be read from the system properties - if they are
-set. Additionally, you can define an external properties file that is loaded
-through the helper class `DevLauncherHelper`. All the properties in this file
-are added to the system properties. This allows you to externalize your
-properties in one location.
-
-If there is a system property already existing when the external configuration
-is loaded, then the existing value will remain unchanged, the new value from the
-properties file will be ignored.
-
-Let's take a look at another example:
-
-      public class SystemPropertyTest {
-
-          public static void main(String[] args) {
-
-              DevLauncherHelper.loadConfigurationFile(new File("/home/foo/file.properties"));
-
-              DevLauncher devLauncher = DevLauncher.createLauncher();
-              devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
-              devLauncher.launch();
-
-          }
-
-      }
-
-Here, the properties from the configuration file at `/home/foo/file.properties`
-will be made available in the system properties. If you do specify a null value
-for the configuration file parameter the file will be expected in the current
-directory from which the Java application was started, named
-`devlauncher.properties`. If it can't be found there, then no additional
-properties will be set.
-
-### Properties
-
-Either through setting them directly as system property or through
-initialization via the configuraion file (as shown above) the following
-properties will be evaluated by the launcher:
-
-#### devlauncher.defaultPort (int)
-
-> The port on which the server will listen for incoming requests.
->
-> Default value: `8080`.
-
-#### devlauncher.shutdownPort (int)
-
-> The port on which the server will open a shutdown connection, where a new
-> instance of the application will first contact any running old instance on
-> that port to make sure the old instance is shutdown first, before the new
-> instance initializes the embedded webserver.
->
-> Default value: `8081`
-
-### devlauncher.workingDirectory (String)
-
-> A directory on the local file system, where the launcher will store it's
-> temporary data (like the workfiles from the webserver)
->
-> Default value: `[User_Home]/.devlauncher`
-
-### devlauncher.workingDirectoryName (String)
-
-> The `.devlauncher` part of the default directory (see above) can be customized
-> separately. It can also be customized by passing at as parameter when calling
-> the `createLauncher` method of the `DevLauncher`.
->
-> Default value: `.devlauncher` (see above)
-
 ## Listeners
 
 Implementations of the `DevLauncherListener` interface can be added to the
 `DevLauncher` to enable fine tuning of the embedded webserver in a powerful
 way. A series of provided listeners can be utilized for common tasks. Following
 a list of the listeners provided by the devlauncher out of the box.
+
+Every listener can either be created manually or through a corresponding Builder
+that allows an easy fluent API to configure the target listener
 
 ### de.perdian.apps.devlauncher.impl.ConnectorListener
 
@@ -161,8 +88,8 @@ For example, if you want the server to not only listen on port 8080 but also on
 port 9090, the following code can be used:
 
       DevLauncher devLauncher = DevLauncher.createLauncher();
-      devLauncher.addListener(new ConnectorListener(9090));
-      devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
+      devLauncher.addListener(new ConnectorListenerBuilder().port(9090).createListener());
+      devLauncher.addListener(new ExplodedWebappListener().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
       devLauncher.launch();
 
 You can also customize the protocol to be used for the connector. For example to
@@ -170,9 +97,9 @@ add a listener on port 8009 listening for AJP requests (and using a redirect
 port of 8443), the initialization looks like this:
 
       DevLauncher devLauncher = DevLauncher.createLauncher();
-      devLauncher.addListener(new ConnectorListener(9090));
-      devLauncher.addListener(new ConnectorListener(8009).protocol("AJP/1.3").redirectPort(8443));
-      devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
+      devLauncher.addListener(new ConnectorListenerBuilder().port(9090));
+      devLauncher.addListener(new ConnectorListenerBuilder().port(8009).ajp().redirectPort(8443).createListener());
+      devLauncher.addListener(new ExplodedWebappListenerBuilder().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
       devLauncher.launch();
 
 When setting the `secure` property of the `ConnectorListener` to true, the
@@ -184,14 +111,14 @@ once (and most likely has been added to the exception list of your browser) it
 will be reused the next time you use the DevLauncher.
 
       DevLauncher devLauncher = DevLauncher.createLauncher();
-      devLauncher.addListener(new ConnectorListener(443).secure(true));
-      devLauncher.addListener(new WebappListener("simple").webappDirectory(new File("src/example/webapp/simple/")));
+      devLauncher.addListener(new ConnectorListenerBuilder().port(443).secure(true).createListener());
+      devLauncher.addListener(new ExplodedWebappListenerBuilder().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
       devLauncher.launch();
 
-### de.perdian.apps.devlauncher.impl.WebappListener
+### de.perdian.apps.devlauncher.impl.ExplodedWebappListener
 
-As seen in the first example, the `WebappListener` makes the content of a
-directory available within a web application. Since the directory itself might
+As seen in the first example, the `ExplodedWebappListener` makes the content of 
+a directory available within a web application. Since the directory itself might
 not just be a predefined directory, it provides several options to configure the
 directory according to the way you configure the listener before adding it to
 the `DevLauncher`.
@@ -218,9 +145,8 @@ is located (that is: the directory from which - if you're using Maven - the
 WAR file is being generated). If a `projectDirectoryName` is set, then the
 project directory will be the combination of `workspaceDirectory` and
 `projectDirectoryName`. If no `projectDirectoryName` is set, then the
-`contextName` (which was set when creating the listener using the constructor)
-will be used as project directory name. You can overwrite this schema directly
-by setting the `projectDirectory` property of the listener.
+`contextName` will be used as project directory name. You can overwrite this 
+schema directly by setting the `projectDirectory` property of the listener.
 
 Now that we know the project directory, we need to determine the actual
 directory in which the web application is located. By default (following the
@@ -234,73 +160,6 @@ configuration entries to be loaded once the embedded Tomcat server initializes
 the web application. If you just specify a `contextConfigurationFileName` then
 the configuration file will be resolved under the `projectDirectory` (which is
 described above).
-
-### de.perdian.apps.devlauncher.impl.CopyResourcesListener
-
-Sometimes a web application depends on external resources to be copied during
-a deploy process. Since the DevLauncher doesn't really perform a deploy process
-(in which a WAR file get's created) but launches the webserver directly, we need
-to simulate such a deployment step.
-
-And one of these steps is copy resources. If this listener is added to a
-DevLauncher, then whenever the server is started, the listener will make sure,
-that resources from a source directory are copied to a target directory.
-
-The source and target directory (from which to copy the files and where to copy
-them to) for the listener can be customized by either setting the property
-`sourceDirectory` and `targetDirectory` of the listener directly, or by setting
-the following system properties either via `System.setProperty` or via the
-configuration file as described earlier.
-
-      CopyResourcesListener listener = new CopyResourcesListener();
-      listener.sourceDirectory(new File("/foo/")).targetDirectory(new File("/bar/"));
-
-#### devlauncher.copy.sourceDirectory (String)
-
-> The source directory from which the files will be read.
->
-> Default value: src/main/resources within the current project directory
-
-#### devlauncher.copy.targetDirectory (String)
-
-> The target directory into which the files will be copied
->
-> The is no default value for this property - it is required and must be set
-> when using the listener.
-
-Note that when using the configuration property, the prefix `devlauncher.copy.`
-can be customized by setting it on the listener itself:
-
-      CopyResourcesListener listener = new CopyResourcesListener();
-      listener.prefix("devlauncher.anotherCopyPrefix.");
-      ...
-      DevLauncher devLauncher = DevLauncher.createLauncher();
-      ...
-      devLauncher.addListener(listener);
-
-The listener can also be customized via other properties that define how the
-copy process is handled:
-
-#### fileFilter (java.io.FileFilter)
-
-Check whether a file has to be copied. If this value is set to `null` then by
-default all files will be copied.
-
-#### copyRecursive (boolean)
-
-Specifies if only the initial directory files will be copied (when set to
-`false`) or if subdirectories should be copied as well (when set to `true`)
-
-#### copyUpdatedFilesOnly (boolean)
-
-Specifies if the copy should only be performed if either the size of the files
-is different or the source file is newer than the target file. If set to `false`
-then the file will always be copied no matter if it actually needs to or not.
-
-#### Special copy operations
-
-If you need to perform any special operations during the copy process, you can
-overwrite the `copyFile` method to implement your special handling requests.
 
 ## Version history
 
