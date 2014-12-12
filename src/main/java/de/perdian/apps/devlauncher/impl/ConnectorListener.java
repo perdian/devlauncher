@@ -45,7 +45,7 @@ import de.perdian.apps.devlauncher.DevLauncher;
 import de.perdian.apps.devlauncher.DevLauncherListener;
 
 /**
- * Builder that collects information about the listener that is to be added to
+ *  that collects information about the listener that is to be added to
  * an embedded Tomcat server instance
  *
  * @author Christian Robert
@@ -61,11 +61,15 @@ public class ConnectorListener implements DevLauncherListener {
 
     public static final String PROTOCOL_AJP = "AJP/1.3";
 
-    private int myPort = -1;
-    private int myRedirectPort = -1;
-    private String myProtocol = null;
-    private String myUriEncoding = "UTF-8";
-    private boolean stateSecure = false;
+    private Integer port = null;
+    private Integer redirectPort = null;
+    private String protocol = null;
+    private String uriEncoding = "UTF-8";
+    private boolean secure = false;
+
+    public ConnectorListener(int port) {
+        this.setPort(Integer.valueOf(port));
+    }
 
     @Override
     public void customizeServer(Tomcat tomcat, DevLauncher launcher) {
@@ -77,7 +81,7 @@ public class ConnectorListener implements DevLauncherListener {
             logMessage.append(" for protocol '").append(this.getProtocol());
         }
         logMessage.append(" listening on port ").append(this.getPort());
-        if (this.getRedirectPort() > 0) {
+        if (this.getRedirectPort() != null) {
             logMessage.append(" and redirectPort ").append(this.getRedirectPort());
         }
         logMessage.append(" [").append(connector).append("]");
@@ -113,8 +117,8 @@ public class ConnectorListener implements DevLauncherListener {
     protected Connector createConnector() {
         Connector connector = new Connector(this.getProtocol());
         connector.setPort(this.getPort());
-        if (this.getRedirectPort() > 0) {
-            connector.setRedirectPort(this.getRedirectPort());
+        if (this.getRedirectPort() != null) {
+            connector.setRedirectPort(this.getRedirectPort().intValue());
         }
         if (this.getUriEncoding() != null) {
             connector.setURIEncoding(this.getUriEncoding());
@@ -200,38 +204,57 @@ public class ConnectorListener implements DevLauncherListener {
     // -------------------------------------------------------------------------
 
     public Integer getPort() {
-        return this.myPort;
+        return this.port;
     }
-    public void setPort(Integer port) {
-        this.myPort = port;
+    private void setPort(Integer port) {
+        this.port = port;
     }
 
+    public ConnectorListener redirectPort(int redirectPort) {
+        this.setRedirectPort(Integer.valueOf(redirectPort));
+        return this;
+    }
     public Integer getRedirectPort() {
-        return this.myRedirectPort;
+        return this.redirectPort;
     }
     public void setRedirectPort(Integer redirectPort) {
-        this.myRedirectPort = redirectPort;
+        this.redirectPort = redirectPort;
     }
 
+    public ConnectorListener ajp() {
+        return this.protocol(ConnectorListener.PROTOCOL_AJP);
+    }
+    public ConnectorListener protocol(String protocol) {
+        this.setProtocol(protocol);
+        return this;
+    }
     public String getProtocol() {
-        return this.myProtocol;
+        return this.protocol;
     }
     public void setProtocol(String protocol) {
-        this.myProtocol = protocol;
+        this.protocol = protocol;
     }
 
+    public ConnectorListener uriEncoding(String uriEncoding) {
+        this.setUriEncoding(uriEncoding);
+        return this;
+    }
+    public String getUriEncoding() {
+        return this.uriEncoding;
+    }
+    public void setUriEncoding(String uriEncoding) {
+        this.uriEncoding = uriEncoding;
+    }
+
+    public ConnectorListener secure() {
+        this.setSecure(true);
+        return this;
+    }
     public boolean isSecure() {
-        return this.stateSecure;
+        return this.secure;
     }
     public void setSecure(boolean secure) {
-        this.stateSecure = secure;
-    }
-
-    public String getUriEncoding() {
-        return this.myUriEncoding;
-    }
-    public void setUriEncoding(String uRIEncoding) {
-        this.myUriEncoding = uRIEncoding;
+        this.secure = secure;
     }
 
 }

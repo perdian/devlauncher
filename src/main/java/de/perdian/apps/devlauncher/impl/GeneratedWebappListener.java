@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Predicate;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
@@ -44,16 +46,20 @@ public class GeneratedWebappListener extends WebappListener {
     private static final Logger log = LoggerFactory.getLogger(GeneratedWebappListener.class);
 
     private Path targetDirectory = null;
-    private List<GeneratedWebappCopyDefinition> copyDefinitions = null;
+    private List<GeneratedWebappCopyDefinition> copyDefinitions = new CopyOnWriteArrayList<>();
+
+    public GeneratedWebappListener(String contextName) {
+        super(contextName);
+    }
 
     @Override
-    protected Path resolveWebapppDirectory() {
+    protected Path resolveWebappDirectory() throws IOException {
         if (this.getTargetDirectory() == null) {
             throw new IllegalArgumentException("Parameter 'targetDirectory' not set!");
         } else if (!Files.exists(this.getTargetDirectory().getParent())) {
             try {
                 log.debug("Creating web application target directory at: {}", this.getTargetDirectory().getParent());
-                Files.createDirectory(this.getTargetDirectory().getParent());
+                Files.createDirectories(this.getTargetDirectory().getParent());
             } catch (IOException e) {
                 throw new RuntimeException("Cannot create target directory at: " + this.getTargetDirectory().getParent());
             }
@@ -78,11 +84,11 @@ public class GeneratedWebappListener extends WebappListener {
     protected void initializeCopyDefinitions(Tomcat tomcat) {
         if (!this.getCopyDefinitions().isEmpty()) {
             try {
-                log.info("Synchronizing {} definitions", this.getCopyDefinitions().size());
+                log.info("Synchronizing {} copy definitions", this.getCopyDefinitions().size());
                 for (GeneratedWebappCopyDefinition copyDefinition : this.getCopyDefinitions()) {
                     this.initializeCopyDefinition(copyDefinition, tomcat);
                 }
-                log.info("Completed synchronizing {} definitions", this.getCopyDefinitions().size());
+                log.info("Completed synchronizing {} copy definitions", this.getCopyDefinitions().size());
             } catch (IOException e) {
                 throw new RuntimeException("Cannot copy resources into target directory: " + this.getTargetDirectory(), e);
             }
@@ -97,7 +103,7 @@ public class GeneratedWebappListener extends WebappListener {
         // Now add a change listener so that whenever a file will change in the
         // future we'll get notified and can react accordingly
         Path targetDirectoryPath = copyDefinition.getTargetDirectoryName() == null ? this.getTargetDirectory() : this.getTargetDirectory().resolve(copyDefinition.getTargetDirectoryName());
-        GeneratedWebappCopyHandler copyHandler = GeneratedWebappCopyHandler.create(copyDefinition.getSourceDirectory(), targetDirectoryPath, copyDefinition.getFileFilter());
+        GeneratedWebappCopyHandler copyHandler = GeneratedWebappCopyHandler.create(copyDefinition, targetDirectoryPath);
 
         // Make sure the synchronization stops once the tomcat is stopped as
         // well
@@ -114,6 +120,36 @@ public class GeneratedWebappListener extends WebappListener {
     }
 
     // -------------------------------------------------------------------------
+    // --- Copy definitions ----------------------------------------------------
+    // -------------------------------------------------------------------------
+
+    public GeneratedWebappListener addCopyDefinition(Path sourceDirectory) {
+        return this.addCopyDefinition(sourceDirectory, null, null, null);
+    }
+
+    public GeneratedWebappListener addCopyDefinition(Path sourceDirectory, Predicate<Path> fileFilter) {
+        return this.addCopyDefinition(sourceDirectory, null, fileFilter, null);
+    }
+
+    public GeneratedWebappListener addCopyDefinition(Path sourceDirectory, String targetDirectoryName) {
+        return this.addCopyDefinition(sourceDirectory, targetDirectoryName, null, null);
+    }
+
+    public GeneratedWebappListener addCopyDefinition(Path sourceDirectory, String targetDirectoryName, Predicate<Path> fileFilter) {
+        return this.addCopyDefinition(sourceDirectory, targetDirectoryName, fileFilter, null);
+    }
+
+    public GeneratedWebappListener addCopyDefinition(Path sourceDirectory, String targetDirectoryName, Predicate<Path> fileFilter, List<GeneratedWebappCopyListener> copyListener) {
+        GeneratedWebappCopyDefinition copyDefinition = new GeneratedWebappCopyDefinition();
+        copyDefinition.setSourceDirectory(sourceDirectory);
+        copyDefinition.setTargetDirectoryName(targetDirectoryName);
+        copyDefinition.setFileFilter(fileFilter);
+        copyDefinition.setCopyListeners(copyListener);
+        this.getCopyDefinitions().add(copyDefinition);
+        return this;
+
+    }
+    // -------------------------------------------------------------------------
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------
 
@@ -124,6 +160,10 @@ public class GeneratedWebappListener extends WebappListener {
         this.copyDefinitions = copyDefinitions;
     }
 
+    public GeneratedWebappListener targetDirectory(Path targetDirectory) {
+        this.setTargetDirectory(targetDirectory);
+        return this;
+    }
     public Path getTargetDirectory() {
         return this.targetDirectory;
     }

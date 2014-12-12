@@ -17,6 +17,7 @@
 package de.perdian.apps.devlauncher.impl;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -30,6 +31,7 @@ public class GeneratedWebappCopyDefinition {
     private Path sourceDirectory = null;
     private Predicate<Path> fileFilter = null;
     private String targetDirectoryName = null;
+    private List<GeneratedWebappCopyListener> copyListeners = null;
 
     // ---------------------------------------------------------------------
     // --- Property access methods -----------------------------------------
@@ -66,6 +68,16 @@ public class GeneratedWebappCopyDefinition {
     }
     public void setTargetDirectoryName(String targetDirectoryName) {
         this.targetDirectoryName = targetDirectoryName;
+    }
+
+    /**
+     * Gets the listeners to be invoked after a copy operation
+     */
+    public List<GeneratedWebappCopyListener> getCopyListeners() {
+        return this.copyListeners;
+    }
+    public void setCopyListeners(List<GeneratedWebappCopyListener> copyListeners) {
+        this.copyListeners = copyListeners;
     }
 
 }

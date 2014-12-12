@@ -43,27 +43,29 @@ class GeneratedWebappCopyHandler implements Closeable {
     private Map<WatchKey, PathPair> keyToPairMap = null;
     private WatchService watchService = null;
     private Predicate<Path> fileFilter = null;
+    private List<GeneratedWebappCopyListener> copyListeners = null;
 
-    static GeneratedWebappCopyHandler create(Path sourcePath, Path targetPath, Predicate<Path> fileFilter) throws IOException {
+    static GeneratedWebappCopyHandler create(GeneratedWebappCopyDefinition copyDefinition, Path targetPath) throws IOException {
 
         GeneratedWebappCopyHandler copyHandler = new GeneratedWebappCopyHandler();
-        copyHandler.setFileFilter(fileFilter == null ? file -> true : fileFilter);
+        copyHandler.setFileFilter(copyDefinition.getFileFilter() == null ? file -> true : copyDefinition.getFileFilter());
+        copyHandler.setCopyListeners(copyDefinition.getCopyListeners());
         copyHandler.setKeyToPairMap(new HashMap<>());
-        copyHandler.setWatchService(sourcePath.getFileSystem().newWatchService());
+        copyHandler.setWatchService(copyDefinition.getSourceDirectory().getFileSystem().newWatchService());
 
         // First make sure the initial copy process is complete
-        int copiedResources = copyHandler.copyResources(sourcePath, targetPath);
+        int copiedResources = copyHandler.copyResources(copyDefinition.getSourceDirectory(), targetPath);
         if (copiedResources > 0) {
-            log.debug("Copied {} resources from {} to {}", copiedResources, sourcePath, targetPath);
+            log.debug("Copied {} resources from {} to {}", copiedResources, copyDefinition.getSourceDirectory(), targetPath);
         }
 
         // Now register the listener for all following copy processes
-        copyHandler.registerWatchServiceOnPath(sourcePath, targetPath);
+        copyHandler.registerWatchServiceOnPath(copyDefinition.getSourceDirectory(), targetPath);
 
         // Start the processor Thread that will do the actual work of
         // transfering the files from their source to the target
         Thread watchServiceProcessorThread = new Thread(copyHandler::handleEvents);
-        watchServiceProcessorThread.setName(GeneratedWebappCopyHandler.class.getSimpleName() + "[ResourceWatcherThread for " + sourcePath + "->" + targetPath + "]");
+        watchServiceProcessorThread.setName(GeneratedWebappCopyHandler.class.getSimpleName() + "[ResourceWatcherThread for " + copyDefinition.getSourceDirectory() + "->" + targetPath + "]");
         watchServiceProcessorThread.start();
 
         // We're done!
@@ -175,23 +177,21 @@ class GeneratedWebappCopyHandler implements Closeable {
     // -------------------------------------------------------------------------
 
     private int copyResources(Path sourcePath, Path targetPath) throws IOException {
+        int copiedResources = 0;
         List<Path> sourceChildren = Files.list(sourcePath).filter(this.getFileFilter()).collect(Collectors.toList());
         if (sourceChildren != null) {
-            int copiedFiles = 0;
             for (Path sourceChild : sourceChildren) {
                 Path targetChild = targetPath.resolve(sourceChild.getFileName());
                 if (Files.isDirectory(sourceChild)) {
-                    copiedFiles += this.copyResources(sourceChild, targetChild);
+                    copiedResources += this.copyResources(sourceChild, targetChild);
                 } else if (Files.isReadable(sourceChild)) {
                     if (this.copyResource(sourceChild, targetChild)) {
-                        copiedFiles++;
+                        copiedResources++;
                     }
                 }
             }
-            return copiedFiles;
-        } else {
-            return 0;
         }
+        return copiedResources;
     }
 
     private boolean copyResource(Path sourcePath, Path targetPath) throws IOException {
@@ -205,6 +205,11 @@ class GeneratedWebappCopyHandler implements Closeable {
                 Files.createDirectories(targetPath.getParent());
             }
             Files.copy(sourcePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+            if (this.getCopyListeners() != null) {
+                for (GeneratedWebappCopyListener copyListener : this.getCopyListeners()) {
+                    copyListener.resourceCopied(sourcePath, targetPath);
+                }
+            }
             return true;
         } else {
             return false;
@@ -218,7 +223,7 @@ class GeneratedWebappCopyHandler implements Closeable {
 
     static void deleteRecursively(Path path) {
         try {
-            if(Files.exists(path)) {
+            if (Files.exists(path)) {
                 if (Files.isDirectory(path)) {
                     Files.list(path).forEach(GeneratedWebappCopyHandler::deleteRecursively);
                 }
@@ -228,7 +233,6 @@ class GeneratedWebappCopyHandler implements Closeable {
             throw new RuntimeException("Cannot delete path: " + path, e);
         }
     }
-
 
     // -------------------------------------------------------------------------
     // --- Inner classes -------------------------------------------------------
@@ -294,6 +298,13 @@ class GeneratedWebappCopyHandler implements Closeable {
     }
     private void setFileFilter(Predicate<Path> fileFilter) {
         this.fileFilter = fileFilter;
+    }
+
+    private List<GeneratedWebappCopyListener> getCopyListeners() {
+        return this.copyListeners;
+    }
+    private void setCopyListeners(List<GeneratedWebappCopyListener> copyListeners) {
+        this.copyListeners = copyListeners;
     }
 
 }

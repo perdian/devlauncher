@@ -40,15 +40,20 @@ public abstract class WebappListener implements DevLauncherListener {
 
     private String contextName = null;
     private Path contextConfigurationFile = null;
+    private String contextConfigurationFileName = null;
+
+    public WebappListener(String contextName) {
+        this.setContextName(contextName);
+    }
 
     @Override
-    public void customizeServer(Tomcat tomcat, DevLauncher devLauncher) {
+    public void customizeServer(Tomcat tomcat, DevLauncher devLauncher) throws IOException {
 
-        Path webappDirectory = this.resolveWebapppDirectory();
-        log.debug("Resolved webapp directory for webapp context '" + this.getContextName() + "' to: " + webappDirectory);
+        Path webappDirectory = this.resolveWebappDirectory();
+        log.info("Resolved webapp directory for webapp context '" + this.getContextName() + "' to: " + webappDirectory);
 
         Context webappContext = this.createWebappContext(tomcat, webappDirectory);
-        Path contextConfigurationFile = this.getContextConfigurationFile();
+        Path contextConfigurationFile = this.resolveContextConfigurationFile();
         if (contextConfigurationFile != null) {
             if (!Files.exists(contextConfigurationFile)) {
                 log.warn("Resolved context configuration file for webapp context '" + this.getContextName() + "' not existing at: " + contextConfigurationFile);
@@ -75,11 +80,11 @@ public abstract class WebappListener implements DevLauncherListener {
         }
     }
 
-    /**
-     * Resolves the target directory that should be used as base for the web
-     * application to be initialized
-     */
-    protected abstract Path resolveWebapppDirectory();
+    protected abstract Path resolveWebappDirectory() throws IOException;
+
+    protected Path resolveContextConfigurationFile() throws IOException {
+        return this.getContextConfigurationFile();
+    }
 
     // -------------------------------------------------------------------------
     // --- Property access methods ---------------------------------------------
@@ -88,15 +93,30 @@ public abstract class WebappListener implements DevLauncherListener {
     public String getContextName() {
         return this.contextName;
     }
-    public void setContextName(String contextName) {
+    private void setContextName(String contextName) {
         this.contextName = contextName;
     }
 
+    public WebappListener contextConfigurationFile(Path contextConfigurationFile) {
+        this.setContextConfigurationFile(contextConfigurationFile);
+        return this;
+    }
     public Path getContextConfigurationFile() {
         return this.contextConfigurationFile;
     }
-    public void setContextConfigurationFile(Path contextConfigurationFile) {
+    private void setContextConfigurationFile(Path contextConfigurationFile) {
         this.contextConfigurationFile = contextConfigurationFile;
+    }
+
+    public WebappListener contextConfigurationFileName(String contextConfigurationFileName) {
+        this.setContextConfigurationFileName(contextConfigurationFileName);
+        return this;
+    }
+    public String getContextConfigurationFileName() {
+        return this.contextConfigurationFileName;
+    }
+    private void setContextConfigurationFileName(String contextConfigurationFileName) {
+        this.contextConfigurationFileName = contextConfigurationFileName;
     }
 
 }

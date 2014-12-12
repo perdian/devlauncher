@@ -16,6 +16,8 @@
  */
 package de.perdian.apps.devlauncher;
 
+import java.io.IOException;
+
 import org.apache.catalina.startup.Tomcat;
 
 /**
@@ -35,6 +37,6 @@ public interface DevLauncherListener {
      * @param devLauncher
      *     the launcher instance in which the listener is to be executed
      */
-    void customizeServer(Tomcat tomcat, DevLauncher devLauncher);
+    void customizeServer(Tomcat tomcat, DevLauncher devLauncher) throws IOException;
 
 }

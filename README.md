@@ -35,7 +35,7 @@ configuration is started looks like this:
           public static void main(String[] args) throws Exception {
 
               DevLauncher devLauncher = new DevLauncher();
-              devLauncher.addListener(new ExplodedWebappListenerBuilder().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
+              devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
               devLauncher.launch();
 
           }
@@ -73,9 +73,6 @@ Implementations of the `DevLauncherListener` interface can be added to the
 way. A series of provided listeners can be utilized for common tasks. Following
 a list of the listeners provided by the devlauncher out of the box.
 
-Every listener can either be created manually or through a corresponding Builder
-that allows an easy fluent API to configure the target listener
-
 ### de.perdian.apps.devlauncher.impl.ConnectorListener
 
 Adds a connector to the embedded webserver. A connector represetns an endpoint
@@ -88,8 +85,8 @@ For example, if you want the server to not only listen on port 8080 but also on
 port 9090, the following code can be used:
 
       DevLauncher devLauncher = DevLauncher.createLauncher();
-      devLauncher.addListener(new ConnectorListenerBuilder().port(9090).createListener());
-      devLauncher.addListener(new ExplodedWebappListener().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
+      devLauncher.addListener(new ConnectorListener(9090));
+      devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
       devLauncher.launch();
 
 You can also customize the protocol to be used for the connector. For example to
@@ -97,9 +94,9 @@ add a listener on port 8009 listening for AJP requests (and using a redirect
 port of 8443), the initialization looks like this:
 
       DevLauncher devLauncher = DevLauncher.createLauncher();
-      devLauncher.addListener(new ConnectorListenerBuilder().port(9090));
-      devLauncher.addListener(new ConnectorListenerBuilder().port(8009).ajp().redirectPort(8443).createListener());
-      devLauncher.addListener(new ExplodedWebappListenerBuilder().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
+      devLauncher.addListener(new ConnectorListener(9090));
+      devLauncher.addListener(new ConnectorListener(8009).ajp().redirectPort(8443));
+      devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
       devLauncher.launch();
 
 When setting the `secure` property of the `ConnectorListener` to true, the
@@ -111,8 +108,8 @@ once (and most likely has been added to the exception list of your browser) it
 will be reused the next time you use the DevLauncher.
 
       DevLauncher devLauncher = DevLauncher.createLauncher();
-      devLauncher.addListener(new ConnectorListenerBuilder().port(443).secure(true).createListener());
-      devLauncher.addListener(new ExplodedWebappListenerBuilder().contextName("simple").webappDirectory(Path.get("src/example/webapp/simple/")).createListener());
+      devLauncher.addListener(new ConnectorListener(443).secure());
+      devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
       devLauncher.launch();
 
 ### de.perdian.apps.devlauncher.impl.ExplodedWebappListener
@@ -167,6 +164,7 @@ described above).
 
 [UPDATE] Increased required Java version to 1.8
 [UPDATE] Adjusted dependency versions
+[UPDATE] Streamlined API
 
 ### Version 3.2.0
 

@@ -61,7 +61,9 @@ public class DevLauncher {
         tomcat.enableNaming();
 
         log.trace("Invoking DevLauncherListener instances");
-        this.getListeners().forEach(listener -> listener.customizeServer(tomcat, this));
+        for (DevLauncherListener listener : this.getListeners()) {
+            listener.customizeServer(tomcat, this);
+        }
 
         log.info("Starting embedded webserver");
         tomcat.start();
