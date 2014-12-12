@@ -44,7 +44,7 @@ class GeneratedWebappCopyHandler implements Closeable {
     private WatchService watchService = null;
     private Predicate<Path> fileFilter = null;
 
-    public static GeneratedWebappCopyHandler create(Path sourcePath, Path targetPath, Predicate<Path> fileFilter) throws IOException {
+    static GeneratedWebappCopyHandler create(Path sourcePath, Path targetPath, Predicate<Path> fileFilter) throws IOException {
 
         GeneratedWebappCopyHandler copyHandler = new GeneratedWebappCopyHandler();
         copyHandler.setFileFilter(fileFilter == null ? file -> true : fileFilter);
