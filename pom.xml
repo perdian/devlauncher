@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.perdian.apps.devlauncher</groupId>
     <artifactId>devlauncher</artifactId>
-    <version>4.0.0</version>
+    <version>4.0.1-SNAPSHOT</version>
 
     <name>Launcher application for Web Applications</name>
     <description>Launcher application for Web Applications</description>
