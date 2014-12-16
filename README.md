@@ -84,7 +84,7 @@ connector.
 For example, if you want the server to not only listen on port 8080 but also on
 port 9090, the following code can be used:
 
-      DevLauncher devLauncher = DevLauncher.createLauncher();
+      DevLauncher devLauncher = new DevLauncher();
       devLauncher.addListener(new ConnectorListener(9090));
       devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
       devLauncher.launch();
@@ -93,7 +93,7 @@ You can also customize the protocol to be used for the connector. For example to
 add a listener on port 8009 listening for AJP requests (and using a redirect
 port of 8443), the initialization looks like this:
 
-      DevLauncher devLauncher = DevLauncher.createLauncher();
+      DevLauncher devLauncher = new DevLauncher();
       devLauncher.addListener(new ConnectorListener(9090));
       devLauncher.addListener(new ConnectorListener(8009).ajp().redirectPort(8443));
       devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
@@ -107,7 +107,7 @@ working directory of the launcher for further use, so if it has been created
 once (and most likely has been added to the exception list of your browser) it
 will be reused the next time you use the DevLauncher.
 
-      DevLauncher devLauncher = DevLauncher.createLauncher();
+      DevLauncher devLauncher = new DevLauncher();
       devLauncher.addListener(new ConnectorListener(443).secure());
       devLauncher.addListener(new ExplodedWebappListener("simple").webappDirectory(Path.get("src/example/webapp/simple/")));
       devLauncher.launch();
