@@ -79,8 +79,9 @@ public class DevLauncher {
     // -------------------------------------------------------------------------
 
     /**
-     * Gets the default port on which the embedded werserver will listen to
-     * incoming requests
+     * @return
+     *      the default port on which the embedded werserver will listen to
+     *      incoming requests
      */
     public Integer getDefaultPort() {
         return this.defaultPort;
@@ -90,8 +91,9 @@ public class DevLauncher {
     }
 
     /**
-     * Gets the working directory in which the running webserver instance can
-     * store it's temporary data and other relevant files
+     * @return
+     *      the working directory in which the running webserver instance can
+     *      store it's temporary data and other relevant files
      */
     public Path getWorkingDirectory() {
         return this.workingDirectory;
@@ -101,7 +103,8 @@ public class DevLauncher {
     }
 
     /**
-     * Gets the port on which the launcher will listen for a shutdown event
+     * @return
+     *      the port on which the launcher will listen for a shutdown event
      */
     public Integer getShutdownPort() {
         return this.shutdownPort;
@@ -111,7 +114,8 @@ public class DevLauncher {
     }
 
     /**
-     * Gets all the listeners interacting with this launcher
+     * @return
+     *      all the listeners interacting with this launcher
      */
     List<DevLauncherListener> getListeners() {
         return this.listeners;

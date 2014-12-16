@@ -80,6 +80,9 @@ public class GeneratedWebappListener extends WebappListener {
 
     /**
      * Make sure the source directories and the target directories are in sync
+     *
+     * @param tomcat
+     *     the tomcat instance in which the server will be started
      */
     protected void initializeCopyDefinitions(Tomcat tomcat) {
         if (!this.getCopyDefinitions().isEmpty()) {
@@ -97,6 +100,13 @@ public class GeneratedWebappListener extends WebappListener {
 
     /**
      * Make sure the source directories and the target directories are in sync
+     *
+     * @param copyDefinition
+     *      the definition to initialize
+     * @param tomcat
+     *      the tomcat instance to be configured
+     * @throws IOException
+     *      thrown if the definition cannot initialized correctly
      */
     protected void initializeCopyDefinition(GeneratedWebappCopyDefinition copyDefinition, Tomcat tomcat) throws IOException {
 
@@ -149,6 +159,7 @@ public class GeneratedWebappListener extends WebappListener {
         return this;
 
     }
+
     // -------------------------------------------------------------------------
     // --- Property access methods ---------------------------------------------
     // -------------------------------------------------------------------------

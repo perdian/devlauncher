@@ -33,9 +33,11 @@ public interface DevLauncherListener {
      * Customizes the Tomcat instance before it is about to be started
      *
      * @param tomcat
-     *     the Tomcat instance to be customized
+     *      the Tomcat instance to be customized
      * @param devLauncher
-     *     the launcher instance in which the listener is to be executed
+     *      the launcher instance in which the listener is to be executed
+     * @throws IOException
+     *      thrown if the server cannot be started correctly
      */
     void customizeServer(Tomcat tomcat, DevLauncher devLauncher) throws IOException;
 

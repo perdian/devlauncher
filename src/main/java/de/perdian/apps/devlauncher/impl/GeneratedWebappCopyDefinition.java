@@ -38,8 +38,9 @@ public class GeneratedWebappCopyDefinition {
     // ---------------------------------------------------------------------
 
     /**
-     * Gets the source directory from where the files will be read and
-     * copied to the target directory/directories.
+     * @return
+     *      the source directory from where the files will be read and
+     *      copied to the target directory/directories.
      */
     public Path getSourceDirectory() {
         return this.sourceDirectory;
@@ -49,8 +50,9 @@ public class GeneratedWebappCopyDefinition {
     }
 
     /**
-     * Gets the filter that specifies which of the files within
-     * the source directory will be copied
+     * @return
+     *      the filter that specifies which of the files within
+     *      the source directory will be copied
      */
     public Predicate<Path> getFileFilter() {
         return this.fileFilter;
@@ -60,8 +62,9 @@ public class GeneratedWebappCopyDefinition {
     }
 
     /**
-     * Gets the name of the target directories (below the webapp directory
-     * into which the files will be written)
+     * @return
+     *      the name of the target directories (below the webapp directory
+     *      into which the files will be written)
      */
     public String getTargetDirectoryName() {
         return this.targetDirectoryName;
@@ -71,7 +74,8 @@ public class GeneratedWebappCopyDefinition {
     }
 
     /**
-     * Gets the listeners to be invoked after a copy operation
+     * @return
+     *      the listeners to be invoked after a copy operation
      */
     public List<GeneratedWebappCopyListener> getCopyListeners() {
         return this.copyListeners;

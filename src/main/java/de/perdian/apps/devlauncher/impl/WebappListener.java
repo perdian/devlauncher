@@ -71,6 +71,13 @@ public abstract class WebappListener implements DevLauncherListener {
 
     /**
      * Creates the web application context
+     *
+     * @param tomcat
+     *      the Tomcat instance into which to add the context
+     * @param webappDirectory
+     *      the web application directory to be used as root for the context
+     * @return
+     *      the created context
      */
     protected Context createWebappContext(Tomcat tomcat, Path webappDirectory) {
         try {
