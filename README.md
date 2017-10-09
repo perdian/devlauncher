@@ -9,6 +9,12 @@ DevLauncher gives you much more flexibility during the configuration and allows
 a finer interaction with the launching process. It also doesn't depend on
 Maven as build environment and can be used in standalone applications.
 
+> _Please note that the basic usecase for which the DevLauncher was originally created is
+> now being fulfilled (a lot better) by Spring Bootstrap and its capabilities to launch an
+> embedded Tomcat servlet container. The DevLauncher will therefore no longer be supported
+> and/or enhanced. If you like what you see go ahead and use it but do not expect support
+> for future Tomcat versions and/or additional features._
+
 ## Download
 
 The official releases are available from Maven Central using the following
@@ -114,7 +120,7 @@ will be reused the next time you use the DevLauncher.
 
 ### de.perdian.apps.devlauncher.impl.ExplodedWebappListener
 
-As seen in the first example, the `ExplodedWebappListener` makes the content of 
+As seen in the first example, the `ExplodedWebappListener` makes the content of
 a directory available within a web application. Since the directory itself might
 not just be a predefined directory, it provides several options to configure the
 directory according to the way you configure the listener before adding it to
@@ -142,7 +148,7 @@ is located (that is: the directory from which - if you're using Maven - the
 WAR file is being generated). If a `projectDirectoryName` is set, then the
 project directory will be the combination of `workspaceDirectory` and
 `projectDirectoryName`. If no `projectDirectoryName` is set, then the
-`contextName` will be used as project directory name. You can overwrite this 
+`contextName` will be used as project directory name. You can overwrite this
 schema directly by setting the `projectDirectory` property of the listener.
 
 Now that we know the project directory, we need to determine the actual
